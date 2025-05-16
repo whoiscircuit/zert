@@ -1,4 +1,36 @@
 #!/usr/bin/env zsh
 function zert-load(){
+    echo "experimental"
+    local SRC_TYPE="$1"
+    local PLUGIN_SRC="$2"
     
+    if [ -z "$SRC_TYPE" ]; then
+        zert-log error "zert-load is called without any argument."
+        zert-log info "USAGE: [zert-load] [SRC_TYPE] [PLUGIN_SRC]"
+        zert-log info "         [SRC_TYPE]  : git | url | file"
+        zert-log info "         [PLUGIN_SRC]: the path to the plugin"
+        return 1
+    fi
+    if [ -z "$PLUGIN_SRC" ]; then
+        zert-log error "zert-load is called without the PLUGIN_SRC argument."
+        zert-log info "USAGE: [zert-load] [SRC_TYPE] [PLUGIN_SRC]"
+        zert-log info "         [SRC_TYPE]  : git | url | file"
+        zert-log info "         [PLUGIN_SRC]: the path to the plugin"
+        return 1
+    fi
+
+    zert-fetch $SRC_TYPE $PLUGIN_SRC
+    local PLUGIN_ID=$(zert-id $SRC_TYPE $PLUGIN_SRC)
+    fpath+=("$ZERT_PLUGINS_DIR/$PLUGIN_ID")
+
+    local PLUGIN_NAME=$(echo "$PLUGIN_ID" | rev | cut -c'7-' | rev)
+
+    function try(){
+        if [[ -f "$ZERT_PLUGINS_DIR/$PLUGIN_ID/$1" ]]; then source "$ZERT_PLUGINS_DIR/$PLUGIN_ID/$1"; else return 1; fi
+    }
+
+    try "$PLUGIN_NAME.zsh" || \
+    try "$PLUGIN_NAME.plugin.zsh" || \
+    try "$PLUGIN_NAME.zsh-theme" || \
+    zert-log error "failed to load plugin [$PLUGIN_ID]: don't know which file to source"
 }

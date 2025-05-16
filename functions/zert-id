@@ -1,0 +1,4 @@
+#!/usr/bin/env
+function zert-id(){
+    echo $(basename "$2")-$(echo "$1:$2" | sha256sum | cut -c1-5)   
+}
