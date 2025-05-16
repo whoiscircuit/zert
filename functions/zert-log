@@ -1,0 +1,21 @@
+#!/usr/bin/env zsh
+zert-log(){
+    # Colors for output
+    local ERROR='\033[0;31m'
+    local SUCCESS='\033[0;32m'
+    local INFO='\033[34m'
+    local HL='\033[33m' # Highlight
+    local NC='\033[0m' # No Color
+    if [[ "$1" == "error" ]]; then
+        local COLOR="$ERROR";
+    elif [[ "$1" == "info" ]]; then
+        local COLOR="$INFO";
+    elif [[ "$1" == "success" ]]; then
+        local COLOR="$SUCCESS";
+    else
+        echo "INVALID LOG TYPE FOR zert-log!!!" >&2
+        return 1
+    fi
+    shift
+    echo "[ZERT]: ${COLOR}$@${NC}"
+}

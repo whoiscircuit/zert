@@ -1,0 +1,53 @@
+#!/usr/bin/env zsh
+# fetch a plugin from a remote source.
+function zert-fetch(){
+    local SRC_TYPE="$1"
+    local PLUGIN_SRC="$2"
+
+    if [ -z "$SRC_TYPE" ]; then
+        zert-log error "zert-fetch is called without any argument."
+        zert-log info "USAGE: [zert-fetch] [SRC_TYPE] [PLUGIN_SRC]"
+        zert-log info "         [SRC_TYPE]  : git | url | file"
+        zert-log info "         [PLUGIN_SRC]: the path to the plugin"
+        return 1
+    fi
+    if [ -z "$PLUGIN_SRC" ]; then
+        zert-log error "zert-fetch is called without the PLUGIN_SRC argument."
+        zert-log info "USAGE: [zert-fetch] [SRC_TYPE] [PLUGIN_SRC]"
+        zert-log info "         [SRC_TYPE]  : git | url | file"
+        zert-log info "         [PLUGIN_SRC]: the path to the plugin"
+        return 1
+    fi
+
+    local PLUGIN_ID=$(basename "$PLUGIN_SRC")-$(echo "$SRC_TYPE:$PLUGIN_SRC" | sha256sum | cut -c1-5)
+
+    if [ "$SRC_TYPE" = "git" ]; then
+        if ! [ -d "$ZERT_PLUGINS_DIR/${PLUGIN_ID}" ]; then
+            zert-log info "installing plugin ${PLUGIN_SRC}"
+            git clone -v --filter blob:none "${PLUGIN_SRC}" "${ZERT_PLUGINS_DIR}/$PLUGIN_ID"
+            if [ $? -ne 0 ]; then
+                zert-log error "failed to install plugin ${PLUGIN_SRC}!"
+                return 1
+            fi
+            zert-log success "successfully installed plugin ${PLUGIN_SRC}."
+        fi
+        if [ -z "$ZERT_LOCKFILE_DISABLED" ]; then
+            local LOCKFILE_REV=$(cat $ZERT_LOCKFILE | grep "^\[$PLUGIN_ID\]=" | cut -d'=' -f2)
+            if [ -z "$LOCKFILE_REV" ]; then
+                local CURRENT_REV=$(git -C "${ZERT_PLUGINS_DIR}/${PLUGIN_ID}" rev-parse HEAD)
+                echo "[$PLUGIN_ID]=${CURRENT_REV}" >> $ZERT_LOCKFILE
+                zert-log info "added ${PLUGIN_ID} to the zert lockfile at ${ZERT_LOCKFILE} commit: ${CURRENT_REV}"
+            elif ! [ "$LOCKFILE_REV" = "${CURRENT_REV}" ]; then
+                zert-log info "checking out ${PLUGIN_ID} to match zert lockfile commit at ${ZERT_LOCKFILE} commit: ${LOCKFILE_REV}"
+                git -C "${ZERT_PLUGINS_DIR}/${PLUGIN_ID}" checkout -f ${LOCKFILE_REV}
+            fi
+        fi
+        
+    elif [ "$SRC_TYPE" = "url" ]; then
+    elif [ "$SRC_TYPE" = "file" ]; then
+    else
+        echo "$ERROR zert-fetch is called with invalid SRC_TYPE: ${HL}$SRC_TYPE${NC}"
+    fi
+}
+zert-fetch git https://github.com/romkatv/powerlevel10k
+# zert-fetch url https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/refs/heads/master/lib/clipboard.zsh

@@ -1,0 +1,4 @@
+#!/usr/bin/env zsh
+function zert-clean(){
+    echo "this is clean"
+}

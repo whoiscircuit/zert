@@ -1,0 +1,4 @@
+#!/usr/bin/env zsh
+function zert-update(){
+    echo "this is zert-update"
+}
