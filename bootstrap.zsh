@@ -50,5 +50,5 @@ fi
 
 if ! [ -f "$ZERT_LOCKFILE" ]; then
     echo "${INFO}initializing the zert lockfile at ${HL}${ZERT_LOCKFILE}${NC}" >&2
-    echo "zert=$(git )
+    echo "zert=$(git rev-parse HEAD -C "${ZERT_PLUGINS_DIR}/zert")" > "$ZERT_LOCKFILE"
 fi
