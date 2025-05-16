@@ -33,21 +33,21 @@ function zert-fetch(){
         fi
         if [ -z "$ZERT_LOCKFILE_DISABLED" ]; then
             local LOCKFILE_REV=$(cat $ZERT_LOCKFILE | grep "^\[$PLUGIN_ID\]=" | cut -d'=' -f2)
+            local CURRENT_REV=$(git -C "${ZERT_PLUGINS_DIR}/${PLUGIN_ID}" rev-parse HEAD)
             if [ -z "$LOCKFILE_REV" ]; then
-                local CURRENT_REV=$(git -C "${ZERT_PLUGINS_DIR}/${PLUGIN_ID}" rev-parse HEAD)
                 echo "[$PLUGIN_ID]=${CURRENT_REV}" >> $ZERT_LOCKFILE
                 zert-log info "added ${PLUGIN_ID} to the zert lockfile at ${ZERT_LOCKFILE} commit: ${CURRENT_REV}"
-            elif ! [ "$LOCKFILE_REV" = "${CURRENT_REV}" ]; then
+            elif ! [ "$LOCKFILE_REV" = "$CURRENT_REV" ]; then
                 zert-log info "checking out ${PLUGIN_ID} to match zert lockfile commit at ${ZERT_LOCKFILE} commit: ${LOCKFILE_REV}"
                 git -C "${ZERT_PLUGINS_DIR}/${PLUGIN_ID}" checkout -f ${LOCKFILE_REV}
             fi
         fi
         
     elif [ "$SRC_TYPE" = "url" ]; then
+        zert-log "error" "not implemented"
     elif [ "$SRC_TYPE" = "file" ]; then
+        zert-log "error" "not implemented"
     else
         echo "$ERROR zert-fetch is called with invalid SRC_TYPE: ${HL}$SRC_TYPE${NC}"
     fi
 }
-zert-fetch git https://github.com/romkatv/powerlevel10k
-# zert-fetch url https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/refs/heads/master/lib/clipboard.zsh
