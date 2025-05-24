@@ -2,7 +2,8 @@
 # Tests for test framework
 set -e
 
-source "${0:A:h}/lib.zsh"
+HERE="${${(%):-%N}:A:h}"
+source "$HERE/lib.zsh"
 
 function test_assert_equals_passes_on_equal_strings {
   assert_equals "test" "test"
