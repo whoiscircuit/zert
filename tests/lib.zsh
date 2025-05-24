@@ -72,7 +72,10 @@ function assert_file_not_exists {
 
 # Assert a command fails
 function assert_fails {
-  "$@"
+  {
+    set +e
+    "$@"
+  }
   if [ $? -eq 0 ]; then
     echo "Command succeeded unexpectedly: $@"
     return 1

@@ -4,6 +4,7 @@ set -e
 
 HERE="${${(%):-%N}:A:h}"
 source "$HERE/lib.zsh"
+TEMP_FILE="$(mktemp)"
 
 function test_assert_equals_passes_on_equal_strings {
   assert_equals "test" "test"
@@ -16,32 +17,26 @@ function test_assert_equals_fails_on_unequal_strings {
 test_case test_assert_equals_fails_on_unequal_strings
 
 function test_assert_file_exists_passes_on_existing_file {
-  local TEMP_FILE="$(mktemp)"
   touch "$TEMP_FILE"
   assert_file_exists "$TEMP_FILE"
-  local RESULT=$?
-  rm $TEMP_FILE
-  return $RESULT
 }
 test_case test_assert_file_exists_passes_on_existing_file
 
 function test_assert_file_exists_fails_on_missing_file {
-  assert_fails assert_file_exists /tmp/missing-pluwyfplywfhdcxnYwflpyu
+  rm "$TEMP_FILE"
+  assert_fails assert_file_exists "$TEMP_FILE"
 }
 test_case test_assert_file_exists_fails_on_missing_file
 
 function test_assert_file_not_exists_passes_on_missing_file {
-  assert_file_not_exists /tmp/missing-pluwyfplywfhdcxnYwflpyu
+  rm "$TEMP_FILE"
+  assert_file_not_exists "$TEMP_FILE"
 }
 test_case test_assert_file_not_exists_passes_on_missing_file
 
 function test_assert_file_not_exists_fails_on_existing_file {
-  local TEMP_FILE="$(mktemp)"
   touch "$TEMP_FILE"
   assert_fails assert_file_not_exists "$TEMP_FILE"
-  local RESULT=$?
-  rm $TEMP_FILE
-  return $RESULT
 }
 test_case test_assert_file_not_exists_fails_on_existing_file
 
