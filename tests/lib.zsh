@@ -10,26 +10,30 @@ set -e
 local RED="\033[31m"
 local GREEN="\033[32m"
 local BLUE="\033[34m"
+local GRAY="\e[38;5;8m"
 local RESET="\033[0m"
 
 # Run a test case
 function test_case {
-  local name="$1"
-  local fn="$2"
+  local fn="$1"
   TEST_COUNT=$(( TEST_COUNT+1 ))
-  echo -n "${BLUE}Running test: $name... ${RESET}"
-  local OUTPUT=$(set +e; $fn 2>&1)
-  if [ $? -eq 0 ]; then
+  echo -n "${BLUE}Running test: $fn... ${RESET}"
+  OUTPUT_FILE=$(mktemp)
+  {
+    set +e
+    ( "$fn" > $OUTPUT_FILE 2>&1)
+    local SUCCESS=$?
+  }
+  if [ $SUCCESS -eq 0 ]; then
     echo "${GREEN}PASS${RESET}"
   else
     echo "${RED}FAIL${RESET}"
-    if [ -n "$OUTPUT" ]; then
-      echo "OUTPUT:"
-      echo "$OUTPUT"
+      echo "${GRAY}OUTPUT:${RESET}"
+      echo "$(cat $OUTPUT_FILE)"
       echo ""
-    fi
     TEST_FAILS=$(( TEST_FAILS+1 ))
   fi
+  rm "$OUTPUT_FILE"
 }
 
 # Assert two values are equal

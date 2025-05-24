@@ -24,20 +24,20 @@ function git_fail {
   return 1
 }
 
-function test_bootstrap_install {
+function test_bootstrap_installs_zert {
   source "${0:A:h}/../zert-bootstrap.zsh" > /tmp/zert_bootstrap.out 2>&1
   assert_file_exists "$ZERT_PLUGINS_DIR/zert/zert.plugin.zsh"
   assert_equals "" "$(cat /tmp/zert_bootstrap.out)"
 }
 
-function test_bootstrap_zert_dir {
+function test_bootstrap_respects_zert_dir {
   ZERT_DIR="$ZERT_TEST_DIR/custom"
   source "${0:A:h}/../zert-bootstrap.zsh" > /tmp/zert_bootstrap.out 2>&1
   assert_file_exists "$ZERT_DIR/plugins/zert/zert.plugin.zsh"
   assert_equals "" "$(cat /tmp/zert_bootstrap.out)"
 }
 
-function test_bootstrap_xdg_data_home {
+function test_bootstrap_respects_xdg_data_home {
   unset ZERT_DIR ZERT_PLUGINS_DIR
   XDG_DATA_HOME="$ZERT_TEST_DIR/xdg"
   source "${0:A:h}/../zert-bootstrap.zsh" > /tmp/zert_bootstrap.out 2>&1
@@ -45,7 +45,7 @@ function test_bootstrap_xdg_data_home {
   assert_equals "" "$(cat /tmp/zert_bootstrap.out)"
 }
 
-function test_bootstrap_already_installed {
+function test_bootstrap_silent_if_zert_already_installed {
   mkdir -p "$ZERT_PLUGINS_DIR/zert"
   touch "$ZERT_PLUGINS_DIR/zert/zert.plugin.zsh"
   source "${0:A:h}/../zert-bootstrap.zsh" > /tmp/zert_bootstrap.out 2>&1
@@ -54,41 +54,41 @@ function test_bootstrap_already_installed {
   assert_file_not_exists "$ZERT_TEST_DIR/git.log"
 }
 
-function test_bootstrap_no_git {
+function test_bootstrap_fails_with_red_error_if_git_missing {
   unfunction git
   source "${0:A:h}/../zert-bootstrap.zsh" > /tmp/zert_bootstrap.out 2> /tmp/zert_bootstrap.err
   assert_fails source "${0:A:h}/../zert-bootstrap.zsh"
   assert_equals $'\033[31m[ZERT]: git is required to install Zert\033[0m' "$(cat /tmp/zert_bootstrap.err)"
 }
 
-function test_bootstrap_git_clone_fails {
+function test_bootstrap_fails_with_red_error_if_git_clone_fails {
   function git { git_fail "$@"; }
   source "${0:A:h}/../zert-bootstrap.zsh" > /tmp/zert_bootstrap.out 2> /tmp/zert_bootstrap.err
   assert_fails source "${0:A:h}/../zert-bootstrap.zsh"
   assert_equals $'\033[31m[ZERT]: Failed to clone Zert to '"$ZERT_PLUGINS_DIR/zert"$'\033[0m' "$(cat /tmp/zert_bootstrap.err)"
 }
 
-function test_bootstrap_mkdir_fails {
+function test_bootstrap_fails_with_red_error_if_mkdir_fails {
   function mkdir { return 1; }
   source "${0:A:h}/../zert-bootstrap.zsh" > /tmp/zert_bootstrap.out 2> /tmp/zert_bootstrap.err
   assert_fails source "${0:A:h}/../zert-bootstrap.zsh"
   assert_equals $'\033[31m[ZERT]: Failed to create '"$ZERT_PLUGINS_DIR"$'\033[0m' "$(cat /tmp/zert_bootstrap.err)"
 }
 
-function test_bootstrap_clone_log {
+function test_bootstrap_logs_cloning_in_blue {
   source "${0:A:h}/../zert-bootstrap.zsh" > /tmp/zert_bootstrap.out 2> /tmp/zert_bootstrap.err
   assert_file_exists "$ZERT_PLUGINS_DIR/zert/zert.plugin.zsh"
   assert_equals $'\033[34m[ZERT]: Cloning Zert to '"$ZERT_PLUGINS_DIR/zert"$'\033[0m' "$(cat /tmp/zert_bootstrap.out)"
 }
 
-test_case "Bootstrap installs Zert silently on success" test_bootstrap_install
-test_case "Bootstrap respects ZERT_DIR" test_bootstrap_zert_dir
-test_case "Bootstrap respects XDG_DATA_HOME" test_bootstrap_xdg_data_home
-test_case "Bootstrap is silent if Zert already installed" test_bootstrap_already_installed
-test_case "Bootstrap fails with red error if git is missing" test_bootstrap_no_git
-test_case "Bootstrap fails with red error if git clone fails" test_bootstrap_git_clone_fails
-test_case "Bootstrap fails with red error if mkdir fails" test_bootstrap_mkdir_fails
-test_case "Bootstrap logs cloning in blue" test_bootstrap_clone_log
+test_case test_bootstrap_installs_zert_silently
+test_case test_bootstrap_respects_zert_dir
+test_case test_bootstrap_respects_xdg_data_home
+test_case test_bootstrap_silent_if_zert_already_installed
+test_case test_bootstrap_fails_with_red_error_if_git_missing
+test_case test_bootstrap_fails_with_red_error_if_git_clone_fails
+test_case test_bootstrap_fails_with_red_error_if_mkdir_fails
+test_case test_bootstrap_logs_cloning_in_blue
 
 test_summary
 
