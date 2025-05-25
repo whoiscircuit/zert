@@ -1,0 +1,20 @@
+#!/usr/bin/env zsh
+
+# The main zert command - acts as a command dispatcher
+function zert() {
+    if [ "$#" -eq 0 ]; then
+        __zert-log error NO_SUBCOMMAND "zert command called without any subcommand"
+        return 1
+    fi
+    local subcommand="$1"
+    shift
+    case "$subcommand" in
+        add)
+            zert-add "$@"
+        ;;
+        *)
+            __zert-log error UNKNOWN_SUBCOMMAND "Unknown subcommand: {{$subcommand}}" >&2
+            return 1
+        ;;
+    esac
+}

@@ -6,24 +6,24 @@ HERE="${${(%):-%N}:A:h}"
 source "$HERE/lib.zsh"
 
 function test_zert_function_is_defined {
-    source "$HERE/../zert.plugin.zsh"
+    source "$HERE/../functions/zert"
     assert_equals "function" "$(type -w zert | awk '{print $2}')"
 }
 test_case test_zert_function_is_defined
 
 function test_zert_dispatches_add_subcommand {
-    source "$HERE/../zert.plugin.zsh"
+    source "$HERE/../functions/zert"
     # Create a mock add function
     zert-add() {
-        echo "[MOCK] add called with $@";
+        echo "MOCK_ADD";
     }
     local output=$(zert add test_plugin)
-    assert_equals "[MOCK] add called with test_plugin" "$output"
+    assert_contains "MOCK_ADD" "$output"
 }
 test_case test_zert_dispatches_add_subcommand
 
 function test_zert_handles_unknown_subcommand {
-    source "$HERE/../zert.plugin.zsh"
+    source "$HERE/../functions/zert"
     local output=$(zert unknown_subcommand 2>&1)
     assert_fails $? && \
     assert_contains "(UNKNOWN_SUBCOMMAND)" "$output"

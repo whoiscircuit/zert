@@ -1,0 +1,82 @@
+#!/usr/bin/env zsh
+# Logging function for Zert
+# Log function
+__zert-log() {
+    # Colors
+    local RED="\033[1;31m"    # Bold red
+    local GRAY="\033[1;38;5;8m" # Bold gray
+    local BLUE="\033[1;34m"   # Bold blue
+    local YELLOW="\033[1;33m" # Bold yellow
+    local CYAN="\033[1;36m"   # Bold cyan
+    local RESET="\033[0m"
+
+    # Determine icon style
+    local icon_style="${ZERT_ICON_STYLE}"
+    if [[ -z "$icon_style" ]]; then
+        zstyle -s ':zert:log' icon-style icon_style || icon_style="nerd"
+    fi
+
+    # Define icons based on style
+    local DEBUG_icon INFO_icon WARNING_icon ERROR_icon
+    case "$icon_style" in
+        emoji)
+            DEBUG_icon="🐛"
+            INFO_icon="ℹ️"
+            WARNING_icon="⚠️"
+            ERROR_icon="❌"
+        ;;
+        *)
+            DEBUG_icon="\uf188"
+            INFO_icon="\uf05a"
+            WARNING_icon="\uf071"
+            ERROR_icon="\uf057"
+        ;;
+    esac
+
+    local verbosity="$1"
+    shift
+    local color icon message suffix=""
+    case "$verbosity" in
+        debug)
+            color="$GRAY"
+            icon="$DEBUG_icon"
+            message="$1"
+        ;;
+        info)
+            color="$BLUE"
+            icon="$INFO_icon"
+            message="$1"
+        ;;
+        warning)
+            color="$YELLOW"
+            icon="$WARNING_icon"
+            message="$1"
+        ;;
+        error)
+            local error_code="$1"
+            shift
+            color="$RED"
+            icon="$ERROR_icon"
+            message="$1"
+            suffix=" ($error_code)"
+        ;;
+        *)
+            echo "Unknown verbosity level: $verbosity" >&2
+            return 1
+        ;;
+    esac
+
+    # Replace {{text}} with cyan-colored text
+    local result=""
+    while [[ $message =~ '\{\{([^}]+)\}\}' ]]; do
+        local before="${message[1,$mbegin[1]-3]}"
+        local highlighted="${match[1]}"
+        local after="${message[$mend[1]+3,-1]}"
+        result+="${before}${CYAN}${highlighted}${color}"
+        message="${after}"
+    done
+    result+="$message"
+    message="$result"
+
+    echo -e "${color}[ZERT]: ${icon} ${message}${suffix}${RESET}" >&2
+}
