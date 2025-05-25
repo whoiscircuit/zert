@@ -7,47 +7,42 @@ source "$HERE/lib.zsh"
 TEMP_FILE="$(mktemp)"
 
 function test_assert_equals_passes_on_equal_strings {
-  assert_equals "test" "test"
+    assert_equals "test" "test"
 }
 test_case test_assert_equals_passes_on_equal_strings
 
 function test_assert_equals_fails_on_unequal_strings {
-  assert_fails assert_equals "test" "wrong"
+    assert_fails assert_equals "test" "wrong"
 }
 test_case test_assert_equals_fails_on_unequal_strings
 
 function test_assert_file_exists_passes_on_existing_file {
-  touch "$TEMP_FILE"
-  assert_file_exists "$TEMP_FILE"
+    touch "$TEMP_FILE"
+    assert_file_exists "$TEMP_FILE"
 }
 test_case test_assert_file_exists_passes_on_existing_file
 
 function test_assert_file_exists_fails_on_missing_file {
-  rm "$TEMP_FILE"
-  assert_fails assert_file_exists "$TEMP_FILE"
+    rm "$TEMP_FILE"
+    assert_fails assert_file_exists "$TEMP_FILE"
 }
 test_case test_assert_file_exists_fails_on_missing_file
 
 function test_assert_file_not_exists_passes_on_missing_file {
-  rm "$TEMP_FILE"
-  assert_file_not_exists "$TEMP_FILE"
+    rm "$TEMP_FILE"
+    assert_file_not_exists "$TEMP_FILE"
 }
 test_case test_assert_file_not_exists_passes_on_missing_file
 
 function test_assert_file_not_exists_fails_on_existing_file {
-  touch "$TEMP_FILE"
-  assert_fails assert_file_not_exists "$TEMP_FILE"
+    touch "$TEMP_FILE"
+    assert_fails assert_file_not_exists "$TEMP_FILE"
 }
 test_case test_assert_file_not_exists_fails_on_existing_file
 
 function test_assert_fails_passes_on_failing_command {
-  assert_fails false
+    assert_fails false
 }
 test_case test_assert_fails_passes_on_failing_command
-
-function test_assert_fails_fails_on_succeeding_command {
-  assert_fails false
-}
-test_case test_assert_fails_fails_on_succeeding_command
 
 test_summary

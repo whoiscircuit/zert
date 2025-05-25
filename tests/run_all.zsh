@@ -13,8 +13,8 @@ local YELLOW="\033[33m"
 local RESET="\033[0m"
 
 for test_file in "$HERE"/test_*.zsh; do
-  echo "${YELLOW}Running $test_file...${RESET}"
-  zsh "$test_file"
+    echo "${YELLOW}Running $test_file...${RESET}"
+    zsh "$test_file"
 done
 
 echo "All tests completed"
