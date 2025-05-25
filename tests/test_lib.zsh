@@ -23,13 +23,13 @@ function test_assert_file_exists_passes_on_existing_file {
 test_case test_assert_file_exists_passes_on_existing_file
 
 function test_assert_file_exists_fails_on_missing_file {
-    rm "$TEMP_FILE"
+    rm -f "$TEMP_FILE"
     assert_fails assert_file_exists "$TEMP_FILE"
 }
 test_case test_assert_file_exists_fails_on_missing_file
 
 function test_assert_file_not_exists_passes_on_missing_file {
-    rm "$TEMP_FILE"
+    rm -f "$TEMP_FILE"
     assert_file_not_exists "$TEMP_FILE"
 }
 test_case test_assert_file_not_exists_passes_on_missing_file

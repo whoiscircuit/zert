@@ -1,6 +1,5 @@
 #!/usr/bin/env zsh
 # Logging function for Zert
-# Log function
 __zert-log() {
     # Colors
     local RED="\033[1;31m"    # Bold red

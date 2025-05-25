@@ -51,8 +51,8 @@ function test_bootstrap_silent_if_zert_already_installed {
     mkdir -p "$ZERT_PLUGINS_DIR/zert"
     touch "$ZERT_PLUGINS_DIR/zert/zert.plugin.zsh"
     source "$HERE/../zert-bootstrap.zsh" > /tmp/zert_bootstrap.out 2>&1
-    assert_file_exists "$ZERT_PLUGINS_DIR/zert/zert.plugin.zsh" && \
-    assert_equals "" "$(cat /tmp/zert_bootstrap.out)" && \
+    assert_file_exists "$ZERT_PLUGINS_DIR/zert/zert.plugin.zsh"
+    assert_equals "" "$(cat /tmp/zert_bootstrap.out)"
     assert_file_not_exists "$TEMP_DIR/git.log"
 }
 test_case test_bootstrap_silent_if_zert_already_installed
@@ -60,16 +60,18 @@ test_case test_bootstrap_silent_if_zert_already_installed
 function test_bootstrap_fails_if_git_missing {
     local ZERT_PLUGINS_DIR="$TEMP_DIR/nowhere"
     function command { return 1; }
-    ( source "$HERE/../zert-bootstrap.zsh" )
-    assert_fails $?
+    local exit_code
+    ( source "$HERE/../zert-bootstrap.zsh" ) || exit_code=$?
+    assert_fails $exit_code
 }
 test_case test_bootstrap_fails_if_git_missing
 
 function test_bootstrap_fails_if_git_clone_fails {
     local ZERT_PLUGINS_DIR="$TEMP_DIR/nowhere"
     function git { git_fail "$@"; }
-    ( source "$HERE/../zert-bootstrap.zsh" )
-    assert_fails $?
+    local exit_code
+    ( source "$HERE/../zert-bootstrap.zsh" ) || exit_code=$?
+    assert_fails $exit_code
 }
 test_case test_bootstrap_fails_if_git_clone_fails
 

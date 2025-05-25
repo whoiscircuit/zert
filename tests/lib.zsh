@@ -21,7 +21,7 @@ function test_case {
     OUTPUT_FILE=$(mktemp)
     {
         set +e
-        ( "$fn" > $OUTPUT_FILE 2>&1)
+        (set -e; "$fn" > $OUTPUT_FILE 2>&1)
         local SUCCESS=$?
     }
     if [ $SUCCESS -eq 0 ]; then

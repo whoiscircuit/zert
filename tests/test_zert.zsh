@@ -25,7 +25,7 @@ test_case test_zert_dispatches_add_subcommand
 function test_zert_handles_unknown_subcommand {
     source "$HERE/../functions/zert"
     local output=$(zert unknown_subcommand 2>&1)
-    assert_fails $? && \
+    assert_fails $?
     assert_contains "(UNKNOWN_SUBCOMMAND)" "$output"
 }
 test_case test_zert_handles_unknown_subcommand

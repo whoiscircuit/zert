@@ -133,4 +133,6 @@ function test_zert_log_error_with_error_code_and_highlighted_text {
 }
 test_case test_zert_log_error_with_error_code_and_highlighted_text
 
+rm $TEMP_OUT $TEMP_ERR
+
 test_summary
