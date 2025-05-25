@@ -15,7 +15,7 @@ function test_zert_dispatches_add_subcommand {
     source "$HERE/../zert.plugin.zsh"
     # Create a mock add function
     zert-add() {
-        echo '[MOCK] add called with $@';
+        echo "[MOCK] add called with $@";
     }
     local output=$(zert add test_plugin)
     assert_equals "[MOCK] add called with test_plugin" "$output"
@@ -26,7 +26,7 @@ function test_zert_handles_unknown_subcommand {
     source "$HERE/../zert.plugin.zsh"
     local output=$(zert unknown_subcommand 2>&1)
     assert_fails $? && \
-    assert_equals "Unknown subcommand: unknown_subcommand" "$output"
+    assert_contains "(UNKNOWN_SUBCOMMAND)" "$output"
 }
 test_case test_zert_handles_unknown_subcommand
 

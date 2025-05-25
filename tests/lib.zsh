@@ -52,7 +52,7 @@ function assert_equals {
 function assert_contains {
     local substring="$1"
     local string="$2"
-    if [ "$string" = *"$substring"* ]; then
+    if [[ "$string" == *"$substring"* ]]; then
         return 0;
     else
         echo "Assertion failed: string '$string' does not contain substring '$substring'"
