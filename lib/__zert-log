@@ -9,15 +9,10 @@ __zert-log() {
     local CYAN="\033[1;36m"   # Bold cyan
     local RESET="\033[0m"
 
-    # Determine icon style
-    local icon_style="${ZERT_ICON_STYLE}"
-    if [[ -z "$icon_style" ]]; then
-        zstyle -s ':zert:log' icon-style icon_style || icon_style="nerd"
-    fi
 
     # Define icons based on style
     local DEBUG_icon INFO_icon WARNING_icon ERROR_icon
-    case "$icon_style" in
+    case "$ZERT_ICON_STYLE" in
         emoji)
             DEBUG_icon="🐛"
             INFO_icon="ℹ️"

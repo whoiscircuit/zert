@@ -1,0 +1,86 @@
+# functions/__zert-fetch
+# Fetch a plugin from a source
+__zert-fetch(){
+    local usage="Usage: __zert-fetch [-b|--branch branch] [-n|--name name] <source>"
+    # Parse options
+    typeset -A opts
+    zparseopts -D -E -- {b,-branch}:=branch {n,-name}:=name || {
+        echo "$usage"
+        return 1
+    }
+    name="${name[-1]}"
+    brnach="${branch[-1]}"
+    
+    local source="${@[-1]}"
+    if [[ -z "$source" ]]; then
+        __zert-log error MISSING_SOURCE "Source is required"
+        echo "$usage"
+        return 1
+    fi
+    
+    # Determine plugin name
+    local plugin_name
+    if [[ -n "${name}" ]]; then
+        plugin_name="${name}"
+    else
+        plugin_name=$(__zert-get-plugin-name "$source") || return 1
+    fi
+    
+    local dest="$ZERT_PLUGINS_DIR/$plugin_name"
+    if [[ -d "$dest" ]]; then
+        __zert-log debug "Plugin already exists at $dest no need to fetch"
+        return 0
+    fi
+    
+    # Handle source types
+    case "$source" in
+        local:*)
+            local local_path="${source#local:}"
+            if [[ -d "$local_path" ]]; then
+                mkdir -p "$(dirname "$dest")"
+                ln -sf "$local_path" "$dest"
+                __zert-log info "Symlinked $local_path to $dest"
+            elif [[ -f "$local_path" ]]; then
+                mkdir -p "$dest"
+                ln -sf "$local_path" "$dest/$(basename "$local_path")"
+                __zert-log info "Symlinked $local_path to $dest/$(basename "$local_path")"
+            fi
+        ;;
+        *)
+            # Remote source
+            local url
+            if [[ $source =~ ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$ ]]; then
+                url="https://github.com/$source.git"
+            elif [[ $source =~ ^https?:// ]]; then
+                url="$source"
+            elif [[ $source =~ ^git@ ]]; then
+                url="$source"
+            else
+                __zert-log error INVALID_SOURCE_FORMAT "Cannot determine URL for source: $source"
+                return 1
+            fi
+            
+            # Clone with optional branch
+            local branch_opt=""
+            [[ -n "${branch}" ]] && branch_opt="--branch ${branch}"
+
+            # Clone accordingly to clone style ZERT_CLONE_STYLE
+            if [[ "$ZERT_CLONE_STYLE" == "normal" ]]; then
+                local clone_style=""
+            elif [[ "$ZERT_CLONE_STYLE" == "blobless" ]]; then
+                local clone_style="--filter=blob:none"
+            elif [[ "$ZERT_CLONE_STYLE" == "treeless" ]]; then
+                local clone_style="--filter=tree:0"
+            else 
+                __zert-log error INVALID_CLONE_STYLE "Clone style is invalid: $ZERT_CLONE_STYLE"
+                return 1
+            fi
+            git clone $clone_style $branch_opt "$url" "$dest" || {
+                __zert-log error "Failed to clone $url to $dest"
+                return 1
+            }
+            echo '*.zwc' >> "$dest/.git/info/exclude"
+            __zert-log info "Cloned $url to $dest"
+        ;;
+    esac
+}

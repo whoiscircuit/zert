@@ -45,4 +45,11 @@ function test_assert_fails_passes_on_failing_command {
 }
 test_case test_assert_fails_passes_on_failing_command
 
+
+function test_assert_contains {
+    assert_contains "test" "testing"
+    assert_fails assert_contains "bash" "zsh"
+}
+test_case test_assert_contains
+
 test_summary

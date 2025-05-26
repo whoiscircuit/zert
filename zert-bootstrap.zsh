@@ -6,14 +6,15 @@ function zert_log {
     local red="\033[31m" blue="\033[34m" reset="\033[0m"
     local prefix="[ZERT]: "
     case "$color" in
-        red)   echo -e "${red}${prefix}${msg}${reset}" >/dev/stderr ;;
-        blue)  echo -e "${blue}${prefix}${msg}${reset}" >/dev/stderr ;;
-        *)     echo -e "${prefix}${msg}" >/dev/stderr ;;
+        red) echo -e "${red}${prefix}${msg}${reset}" >/dev/stderr ;;
+        blue) echo -e "${blue}${prefix}${msg}${reset}" >/dev/stderr ;;
+        *) echo -e "${prefix}${msg}" >/dev/stderr ;;
     esac
 }
 
 # Resolve Zert directories
-ZERT_PLUGINS_DIR="${ZERT_PLUGINS_DIR:-${ZERT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/zert}/plugins}"
+ZERT_DIR="${ZERT_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/zert}"
+ZERT_PLUGINS_DIR="${ZERT_PLUGINS_DIR:-${ZERT_DIR}/plugins}"
 
 # Check if Zert is already installed
 if [[ -f "$ZERT_PLUGINS_DIR/zert/zert.plugin.zsh" ]]; then

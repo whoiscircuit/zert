@@ -16,12 +16,15 @@ local RESET="\033[0m"
 # Run a test case
 function test_case {
     local fn="$1"
-    TEST_COUNT=$(( TEST_COUNT+1 ))
+    TEST_COUNT=$((TEST_COUNT + 1))
     echo -n "${BLUE}Running test: $fn... ${RESET}"
     OUTPUT_FILE=$(mktemp)
     {
         set +e
-        (set -e; "$fn" > $OUTPUT_FILE 2>&1)
+        (
+            set -e
+            "$fn" >$OUTPUT_FILE 2>&1
+        )
         local SUCCESS=$?
     }
     if [ $SUCCESS -eq 0 ]; then
@@ -31,7 +34,7 @@ function test_case {
         echo "${GRAY}OUTPUT:${RESET}"
         echo "$(cat $OUTPUT_FILE)"
         echo ""
-        TEST_FAILS=$(( TEST_FAILS+1 ))
+        TEST_FAILS=$((TEST_FAILS + 1))
     fi
     rm "$OUTPUT_FILE"
 }
@@ -53,9 +56,10 @@ function assert_contains {
     local substring="$1"
     local string="$2"
     if [[ "$string" == *"$substring"* ]]; then
-        return 0;
+        return 0
     else
         echo "Assertion failed: string '$string' does not contain substring '$substring'"
+        return 1
     fi
 }
 
@@ -66,6 +70,17 @@ function assert_file_exists {
         return 0
     else
         echo "File does not exist: $file"
+        return 1
+    fi
+}
+
+# Assert a directory exists
+function assert_dir_exists {
+    local dir="$1"
+    if [ -d "$dir" ]; then
+        return 0
+    else
+        echo "directory does not exist: $dir"
         return 1
     fi
 }

@@ -2,163 +2,166 @@
 # Tests for __zert-fetch function
 set -e
 
-# Determine the script's directory
 HERE="${${(%):-%N}:A:h}"
 source "$HERE/lib.zsh"
 
 # Setup temporary environment
 TEMP_DIR=$(mktemp -d)
 ZERT_PLUGINS_DIR="$TEMP_DIR/plugins"
-HERE="$TEMP_DIR/test_dir"
-mkdir -p "$HERE"
+mkdir -p "$ZERT_PLUGINS_DIR"
+TEMP_LOG="$TEMP_DIR/log.txt"
+touch "$TEMP_LOG"
+ZERT_CLONE_STYLE="normal"
 
-# Mock functions
-git() {
-    echo "git $@" >> "$TEMP_DIR/git.log"
-    if [[ "$1" == "clone" ]]; then
-        local dest="${@: -1}"
-        mkdir -p "$dest/.git/info"
-        touch "$dest/.git/info/exclude"
-    fi
+source "$HERE/../lib/__zert-fetch"
+source "$HERE/../lib/__zert-get-plugin-name"
+
+# Mock commands
+function git() {
+    echo "[MOCK] git $@" >> "$TEMP_LOG"
+    local dest="${@[-1]}"
+    mkdir -p "$dest/.git/info"
+    touch "$dest/.git/info/exclude"
 }
 
-ln() {
-    echo "ln $@" >> "$TEMP_DIR/ln.log"
-    command ln "$@"
+function __zert-log() {
+    echo "[MOCK] __zert-log $@" >> "$TEMP_LOG"
 }
 
-mkdir() {
-    echo "mkdir $@" >> "$TEMP_DIR/mkdir.log"
-    command mkdir "$@"
+function test_fetch_local_relative_path_errors {
+    rm -f "$TEMP_LOG"
+    local source="local:./relative/path"
+    assert_fails __zert-fetch "$source"
+    assert_contains "RELATIVE_PATH_NOT_ALLOWED" "$(cat "$TEMP_LOG")"
 }
+test_case test_fetch_local_relative_path_errors
 
-__zert-log() {
-    echo "__zert-log $@" >> "$TEMP_DIR/log.log"
-}
-
-# Test Functions
-
-test_fetch_github_repository() {
-    source "$HERE/../functions/__zert-fetch"
-    local source="user/repo"
-    local expected_dest="$ZERT_PLUGINS_DIR/github-user-repo"
-
+function test_fetch_local_absolute_directory {
+    rm -f "$TEMP_LOG"
+    local temp_dir=$(mktemp -d)
+    mkdir -p "$temp_dir"
+    local source="local:$temp_dir"
+    local plugin_name=$(basename "$temp_dir")
+    local expected_dest="$ZERT_PLUGINS_DIR/local/$plugin_name"
     __zert-fetch "$source"
-
-    assert_file_exists "$expected_dest/.git/info/exclude"
-    assert_contains "*.zwc" "$(cat "$expected_dest/.git/info/exclude")"
-    assert_contains "git clone https://github.com/user/repo.git $expected_dest" "$(cat "$TEMP_DIR/git.log")"
+    assert_dir_exists "$expected_dest"
+    assert_equals "$(readlink "$expected_dest")" "$temp_dir"
+    rm -rf "${temp_dir:-/dev/null}"
 }
-test_case test_fetch_github_repository
+test_case test_fetch_local_absolute_directory
 
-test_fetch_url_repository() {
-    source "$HERE/../functions/__zert-fetch"
-    local source="https://example.com/user/repo.git"
-    local expected_dest="$ZERT_PLUGINS_DIR/example.com-repo"
-
+function test_fetch_local_absolute_file {
+    rm -f "$TEMP_LOG"
+    local temp_file=$(mktemp)
+    mv "$temp_file" "$temp_file.zsh"
+    temp_file="$temp_file.zsh"
+    local source="local:$temp_file"
+    local plugin_name=$(basename "$temp_file" .zsh)
+    local expected_dir="$ZERT_PLUGINS_DIR/local/$plugin_name"
+    local expected_link="$expected_dir/$(basename "$temp_file")"
     __zert-fetch "$source"
-
-    assert_file_exists "$expected_dest/.git/info/exclude"
-    assert_contains "*.zwc" "$(cat "$expected_dest/.git/info/exclude")"
-    assert_contains "git clone $source $expected_dest" "$(cat "$TEMP_DIR/git.log")"
-}
-test_case test_fetch_url_repository
-
-test_fetch_ssh_repository() {
-    source "$HERE/../functions/__zert-fetch"
-    local source="git@example.com:user/repo"
-    local expected_dest="$ZERT_PLUGINS_DIR/example.com-repo"
-
-    __zert-fetch "$source"
-
-    assert_file_exists "$expected_dest/.git/info/exclude"
-    assert_contains "*.zwc" "$(cat "$expected_dest/.git/info/exclude")"
-    assert_contains "git clone $source $expected_dest" "$(cat "$TEMP_DIR/git.log")"
-}
-test_case test_fetch_ssh_repository
-
-test_fetch_local_directory_absolute() {
-    source "$HERE/../functions/__zert-fetch"
-    local temp_source_dir=$(mktemp -d)
-    local source="local:$temp_source_dir"
-    local plugin_name=$(basename "$temp_source_dir")
-    local expected_dest="$ZERT_PLUGINS_DIR/local-$plugin_name"
-
-    __zert-fetch "$source"
-
-    assert_file_exists "$expected_dest"
-    assert_equals "$(readlink "$expected_dest")" "$temp_source_dir"
-    assert_file_not_exists "$TEMP_DIR/git.log"  # No git commands for local
-}
-test_case test_fetch_local_directory_absolute
-
-test_fetch_local_file_absolute() {
-    source "$HERE/../functions/__zert-fetch"
-    local temp_source_file="$TEMP_DIR/test_file.zsh"
-    touch "$temp_source_file"
-    local source="local:$temp_source_file"
-    local plugin_name="test_file"
-    local expected_dir="$ZERT_PLUGINS_DIR/local-$plugin_name"
-    local expected_link="$expected_dir/test_file.zsh"
-
-    __zert-fetch "$source"
-
     assert_file_exists "$expected_link"
-    assert_equals "$(readlink "$expected_link")" "$temp_source_file"
-    assert_file_not_exists "$TEMP_DIR/git.log"
+    assert_equals "$(readlink "$expected_link")" "$temp_file"
+    rm "$temp_file"
 }
-test_case test_fetch_local_file_absolute
+test_case test_fetch_local_absolute_file
 
-test_fetch_local_directory_relative() {
-    source "$HERE/../functions/__zert-fetch"
-    local relative_path="test_dir"
-    local expected_source="$HERE/$relative_path"
-    mkdir -p "$expected_source"
-    local source="local:$relative_path"
-    local plugin_name="$relative_path"
-    local expected_dest="$ZERT_PLUGINS_DIR/local-$plugin_name"
-
+function test_fetch_github_shorthand {
+    rm -f "$TEMP_LOG"
+    local source="zsh-users/zsh-plugin-1"
+    local expected_dest="$ZERT_PLUGINS_DIR/zsh-users/zsh-plugin-1"
     __zert-fetch "$source"
-
-    assert_file_exists "$expected_dest"
-    assert_equals "$(readlink "$expected_dest")" "$expected_source"
+    assert_file_exists "$expected_dest/.git/info/exclude"
+    assert_contains "*.zwc" "$(cat "$expected_dest/.git/info/exclude")"
+    assert_contains "git clone https://github.com/zsh-users/zsh-plugin-1.git $expected_dest" "$(cat "$TEMP_LOG")"
 }
-test_case test_fetch_local_directory_relative
+test_case test_fetch_github_shorthand
 
-test_fetch_invalid_source() {
-    source "$HERE/../functions/__zert-fetch"
-    local source="invalid_format"
-    (__zert-fetch "$source" > /dev/null 2>&1)
-    assert_fails $?
-    assert_contains "__zert-log error 1 Invalid source format: $source" "$(cat "$TEMP_DIR/log.log")"
+function test_fetch_github_url {
+    rm -f "$TEMP_LOG"
+    local source="https://github.com/zsh-users/zsh-plugin-2.git"
+    local expected_dest="$ZERT_PLUGINS_DIR/zsh-users/zsh-plugin-2"
+    __zert-fetch "$source"
+    assert_file_exists "$expected_dest/.git/info/exclude"
+    assert_contains "*.zwc" "$(cat "$expected_dest/.git/info/exclude")"
+    assert_contains "git clone $source $expected_dest" "$(cat "$TEMP_LOG")"
+}
+test_case test_fetch_github_url
+
+function test_fetch_ssh_url {
+    rm -f "$TEMP_LOG"
+    local source="git@github.com:zsh-users/zsh-plugin-3"
+    local expected_dest="$ZERT_PLUGINS_DIR/zsh-users/zsh-plugin-3"
+    __zert-fetch "$source"
+    assert_file_exists "$expected_dest/.git/info/exclude"
+    assert_contains "*.zwc" "$(cat "$expected_dest/.git/info/exclude")"
+    assert_contains "git clone $source $expected_dest" "$(cat "$TEMP_LOG")"
+}
+test_case test_fetch_ssh_url
+
+function test_fetch_with_custom_name {
+    rm -f "$TEMP_LOG"
+    local source="zsh-users/zsh-plugin-4"
+    local custom_name="custom/custome-name"
+    local expected_dest="$ZERT_PLUGINS_DIR/$custom_name"
+    __zert-fetch --name "$custom_name" "$source"
+    assert_file_exists "$expected_dest/.git/info/exclude"
+    assert_contains "*.zwc" "$(cat "$expected_dest/.git/info/exclude")"
+    assert_contains "git clone https://github.com/zsh-users/zsh-plugin-4.git $expected_dest" "$(cat "$TEMP_LOG")"
+}
+test_case test_fetch_with_custom_name
+
+function test_fetch_with_branch {
+    rm -f "$TEMP_LOG"
+    local source="zsh-users/zsh-plugin-5"
+    local branch="dev"
+    local expected_dest="$ZERT_PLUGINS_DIR/zsh-users/zsh-plugin-5"
+    __zert-fetch --branch "$branch" "$source"
+    assert_file_exists "$expected_dest/.git/info/exclude"
+    assert_contains "*.zwc" "$(cat "$expected_dest/.git/info/exclude")"
+    assert_contains "git clone --branch $branch https://github.com/zsh-users/zsh-plugin-5.git $expected_dest" "$(cat "$TEMP_LOG")"
+}
+test_case test_fetch_with_branch
+
+function test_fetch_invalid_source {
+    rm -f "$TEMP_LOG"
+    local source="invalid_source"
+    assert_fails __zert-fetch "$source"
+    assert_contains "INVALID_SOURCE_FORMAT" "$(cat "$TEMP_LOG")"
 }
 test_case test_fetch_invalid_source
 
-test_skip_fetch_if_directory_exists() {
-    source "$HERE/../functions/__zert-fetch"
-    local source="user/repo"
-    local expected_dest="$ZERT_PLUGINS_DIR/github-user-repo"
+function test_skip_fetch_if_directory_exists {
+    rm -f "$TEMP_LOG"
+    local source="zsh-users/zsh-plugin-5"
+    local expected_dest="$ZERT_PLUGINS_DIR/zsh-users/zsh-plugin-5"
     mkdir -p "$expected_dest"
-
     __zert-fetch "$source"
-
-    assert_file_not_exists "$TEMP_DIR/git.log"
-    assert_contains "__zert-log info Plugin github-user-repo already exists in $expected_dest" "$(cat "$TEMP_DIR/log.log")"
+    assert_equals '' "$(cat "$TEMP_LOG" | grep -v "debug")"
 }
 test_case test_skip_fetch_if_directory_exists
 
-test_fetch_with_blobless_clone_style() {
-    source "$HERE/../functions/__zert-fetch"
+function test_fetch_with_blobless_clone_style {
     ZERT_CLONE_STYLE="blobless"
-    local source="user/repo"
-    local expected_dest="$ZERT_PLUGINS_DIR/github-user-repo"
-
+    rm -f "$TEMP_LOG"
+    local source="zsh-users/zsh-plugin-6"
+    local expected_dest="$ZERT_PLUGINS_DIR/zsh-users/zsh-plugin-6"
     __zert-fetch "$source"
-
-    assert_contains "git clone --filter=blob:none https://github.com/user/repo.git $expected_dest" "$(cat "$TEMP_DIR/git.log")"
+    assert_contains "git clone --filter=blob:none https://github.com/zsh-users/zsh-plugin-6.git $expected_dest" "$(cat "$TEMP_LOG")"
 }
 test_case test_fetch_with_blobless_clone_style
 
+function test_fetch_with_treeless_clone_style {
+    ZERT_CLONE_STYLE="treeless"
+    rm -f "$TEMP_LOG"
+    local source="zsh-users/zsh-plugin-7"
+    local expected_dest="$ZERT_PLUGINS_DIR/zsh-users/zsh-plugin-7"
+    __zert-fetch "$source"
+    assert_contains "git clone --filter=tree:0 https://github.com/zsh-users/zsh-plugin-7.git $expected_dest" "$(cat "$TEMP_LOG")"
+}
+test_case test_fetch_with_treeless_clone_style
+
+rm -f "${TEMP_LOG:-/dev/null}"
 rm -rf "${TEMP_DIR:-/dev/null}"
 
 test_summary
