@@ -14,6 +14,12 @@ fi
 if [[ -z "$ZERT_CLONE_STYLE" ]]; then
     zstyle -s ':zert:' clone-style ZERT_CLONE_STYLE || ZERT_CLONE_STYLE="treeless"
 fi
+if [[ -z "$ZERT_LOCKFILE" ]]; then
+    zstyle -s ':zert:' lockfile ZERT_LOCKFILE || ZERT_LOCKFILE="${ZERT_DIR}/zert.lock"
+fi
+if [[ -z "$ZERT_NO_LOCKFILE" ]]; then
+    zstyle -s ':zert:' no-lockfile ZERT_NO_LOCKFILE || ZERT_NO_LOCKFILE=""
+fi
 
 HERE="${${(%):-%N}:A:h}"
 

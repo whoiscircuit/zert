@@ -3,7 +3,6 @@
 __zert-fetch(){
     local usage="Usage: __zert-fetch [-b|--branch branch] [-n|--name name] <source>"
     # Parse options
-    typeset -A opts
     zparseopts -D -E -- {b,-branch}:=branch {n,-name}:=name || {
         echo "$usage"
         return 1
