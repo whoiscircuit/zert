@@ -28,7 +28,7 @@ __zert-fetch(){
     
     local dest="$ZERT_PLUGINS_DIR/$plugin_name"
     if [[ -d "$dest" ]]; then
-        __zert-log debug "Plugin already exists at $dest no need to fetch"
+        __zert-log debug "Plugin already exists at {{$dest}} no need to fetch"
         return 0
     fi
     
@@ -39,11 +39,11 @@ __zert-fetch(){
             if [[ -d "$local_path" ]]; then
                 mkdir -p "$(dirname "$dest")"
                 ln -sf "$local_path" "$dest"
-                __zert-log info "Symlinked $local_path to $dest"
+                __zert-log info "Symlinked {{$local_path}} to {{$dest}}"
             elif [[ -f "$local_path" ]]; then
                 mkdir -p "$dest"
                 ln -sf "$local_path" "$dest/$(basename "$local_path")"
-                __zert-log info "Symlinked $local_path to $dest/$(basename "$local_path")"
+                __zert-log info "Symlinked {{$local_path}} to {{$dest/$(basename "$local_path")}}"
             fi
         ;;
         *)
@@ -56,7 +56,7 @@ __zert-fetch(){
             elif [[ $source =~ ^git@ ]]; then
                 url="$source"
             else
-                __zert-log error INVALID_SOURCE_FORMAT "Cannot determine URL for source: $source"
+                __zert-log error INVALID_SOURCE_FORMAT "Cannot determine URL for source: {{$source}}"
                 return 1
             fi
             
@@ -72,15 +72,15 @@ __zert-fetch(){
             elif [[ "$ZERT_CLONE_STYLE" == "treeless" ]]; then
                 local clone_style="--filter=tree:0"
             else 
-                __zert-log error INVALID_CLONE_STYLE "Clone style is invalid: $ZERT_CLONE_STYLE"
+                __zert-log error INVALID_CLONE_STYLE "Clone style is invalid: {{$ZERT_CLONE_STYLE}}"
                 return 1
             fi
             git clone $clone_style $branch_opt "$url" "$dest" || {
-                __zert-log error "Failed to clone $url to $dest"
+                __zert-log error "Failed to clone {{$url}} to {{$dest}}"
                 return 1
             }
             echo '*.zwc' >> "$dest/.git/info/exclude"
-            __zert-log info "Cloned $url to $dest"
+            __zert-log info "Cloned {{$url}} to {{$dest}}"
         ;;
     esac
 }

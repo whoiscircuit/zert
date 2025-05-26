@@ -5,7 +5,7 @@ function __zert-get-plugin-name() {
     if [[ $source == local:* ]]; then
         local local_path="${source#local:}"
         if [[ ! $local_path == /* ]]; then
-            __zert-log error RELATIVE_PATH_NOT_ALLOWED "Local path must be absolute: $local_path"
+            __zert-log error RELATIVE_PATH_NOT_ALLOWED "Local path must be absolute: {{$local_path}}"
             return 1
         fi
         if [[ -d "$local_path" ]]; then
@@ -14,7 +14,7 @@ function __zert-get-plugin-name() {
             local file_name=$(basename "$local_path")
             echo "local/${file_name%.*}"
         else
-            __zert-log error LOCAL_PATH_NOT_FOUND "Local path does not exist: $local_path"
+            __zert-log error LOCAL_PATH_NOT_FOUND "Local path does not exist: {{$local_path}}"
             return 1
         fi
     elif [[ $source =~ ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$ ]]; then
@@ -27,7 +27,7 @@ function __zert-get-plugin-name() {
         # SSH: git@domain.com:user/repo.git -> user/repo
         echo "${match[1]}"
     else
-        __zert-log error INVALID_SOURCE_FORMAT "Invalid source format: $source"
+        __zert-log error INVALID_SOURCE_FORMAT "Invalid source format: {{$source}}"
         return 1
     fi
 }

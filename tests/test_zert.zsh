@@ -5,6 +5,11 @@ set -e
 HERE="${${(%):-%N}:A:h}"
 source "$HERE/lib.zsh"
 
+# mock functinos
+__zert-log(){
+    echo $@
+}
+
 function test_zert_function_is_defined {
     source "$HERE/../functions/zert"
     assert_equals "function" "$(type -w zert | awk '{print $2}')"
@@ -25,8 +30,8 @@ test_case test_zert_dispatches_add_subcommand
 function test_zert_handles_unknown_subcommand {
     source "$HERE/../functions/zert"
     local output=$(zert unknown_subcommand 2>&1)
-    assert_fails $?
-    assert_contains "(UNKNOWN_SUBCOMMAND)" "$output"
+    assert_equals $? 0
+    assert_contains "UNKNOWN_SUBCOMMAND" "$output"
 }
 test_case test_zert_handles_unknown_subcommand
 

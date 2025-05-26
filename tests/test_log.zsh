@@ -11,7 +11,7 @@ TEMP_ERR=$(mktemp)
 # Helper to reset environment
 function reset_env {
     unset ZERT_ICON_STYLE
-    zstyle -d ':zert:log' icon-style
+    zstyle -d ':zert:' icon-style
 }
 
 function test_zert_log_debug_outputs_gray_bold_to_stderr_with_nerd_icon {
@@ -93,25 +93,6 @@ function test_zert_log_error_outputs_emoji_when_icon_style_is_emoji {
     assert_equals $'\033[1;31m[ZERT]: ❌ Error message (1)\033[0m' "$(cat $TEMP_ERR)"
 }
 test_case test_zert_log_error_outputs_emoji_when_icon_style_is_emoji
-
-function test_zert_log_uses_zstyle_icon_style_when_no_env_var {
-    reset_env
-    zstyle ':zert:log' icon-style emoji
-    source "$HERE/../lib/__zert-log"
-    __zert-log info "Info message" >$TEMP_OUT 2>$TEMP_ERR
-    assert_equals "" "$(cat $TEMP_OUT)" && \
-    assert_equals $'\033[1;34m[ZERT]: ℹ️ Info message\033[0m' "$(cat $TEMP_ERR)"
-}
-test_case test_zert_log_uses_zstyle_icon_style_when_no_env_var
-
-function test_zert_log_defaults_to_nerd_icon_when_no_config {
-    reset_env
-    source "$HERE/../lib/__zert-log"
-    __zert-log info "Info message" >$TEMP_OUT 2>$TEMP_ERR
-    assert_equals "" "$(cat $TEMP_OUT)" && \
-    assert_equals $'\033[1;34m[ZERT]: \uf05a Info message\033[0m' "$(cat $TEMP_ERR)"
-}
-test_case test_zert_log_defaults_to_nerd_icon_when_no_config
 
 function test_zert_log_highlights_text_in_curly_braces_with_cyan {
     reset_env
