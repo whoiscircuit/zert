@@ -39,7 +39,7 @@ function rm() {
   echo "rm $@" >> "$TEMP_DIR/rm.log"
 }
 
-# Test 1: Exits quietly if ZERT_NO_LOCKFILE is set
+# Exits quietly if ZERT_NO_LOCKFILE is set
 function test_exits_quietly_with_no_lockfile {
   ZERT_NO_LOCKFILE=1
   __zert-align-version "test-plugin"
@@ -48,7 +48,7 @@ function test_exits_quietly_with_no_lockfile {
 }
 test_case test_exits_quietly_with_no_lockfile
 
-# Test 2: Errors if ZERT_LOCKFILE is missing
+#  Errors if ZERT_LOCKFILE is missing
 function test_errors_if_lockfile_missing {
   rm "$ZERT_LOCKFILE"
   ( __zert-align-version "test-plugin" > /dev/null 2>&1 )
@@ -56,7 +56,7 @@ function test_errors_if_lockfile_missing {
 }
 test_case test_errors_if_lockfile_missing
 
-# Test 3: Exits quietly if already aligned
+#  Exits quietly if already aligned
 function test_exits_quietly_if_aligned {
   echo "[test-plugin]=current_hash" > "$ZERT_LOCKFILE"
   __zert-align-version "test-plugin"
@@ -65,16 +65,24 @@ function test_exits_quietly_if_aligned {
 }
 test_case test_exits_quietly_if_aligned
 
-# Test 4: Aligns version if not aligned
+#  Aligns version if not aligned
+function test_aligns_with_pin_argument {
+  echo "[test-plugin]=lockfile_hash" > "$ZERT_LOCKFILE"
+  __zert-align-version "test-plugin" "pin_hash"
+  assert_contains "Checked out pin_hash" "$(cat "$TEMP_DIR/git.log")"
+  assert_contains "[test-plugin]=pin_hash" "$(cat "$ZERT_LOCKFILE")"
+}
+test_case test_aligns_with_pin_argument
+
+#  Aligns version if not aligned
 function test_aligns_if_not_aligned {
-  set -x
   echo "[test-plugin]=lockfile_hash" > "$ZERT_LOCKFILE"
   __zert-align-version "test-plugin"
   assert_contains "Checked out lockfile_hash" "$(cat "$TEMP_DIR/git.log")"
 }
 test_case test_aligns_if_not_aligned
 
-# Test 5: Removes zwc files from subdirectories
+#  Removes zwc files from subdirectories
 function test_removes_zwc {
   touch "$ZERT_PLUGINS_DIR/test-plugin/root.zwc"
   mkdir -p "$ZERT_PLUGINS_DIR/test-plugin/subdir"
@@ -86,7 +94,7 @@ function test_removes_zwc {
 }
 test_case test_removes_zwc
 
-# Test 6: Adds hash if plugin not in lockfile
+#  Adds hash if plugin not in lockfile
 function test_adds_hash_if_not_in_lockfile {
   echo "" > "$ZERT_LOCKFILE"
   __zert-align-version "test-plugin"
@@ -94,7 +102,7 @@ function test_adds_hash_if_not_in_lockfile {
 }
 test_case test_adds_hash_if_not_in_lockfile
 
-# Test 7: Errors on git failure
+#  Errors on git failure
 function test_errors_on_git_failure {
   function git() { return 1; }
   echo "[test-plugin]=lockfile_hash" > "$ZERT_LOCKFILE"

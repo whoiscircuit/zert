@@ -16,7 +16,7 @@ local RESET="\033[0m"
 
 for test_file in "$HERE"/test_*.zsh; do
     echo "${YELLOW}Running $test_file...${RESET}"
-    source "$test_file"
+    ( zsh "$test_file" )
     TOTAL_TEST_COUNT=$(( $TOTAL_TEST_COUNT + $TEST_COUNT ))
     TOTAL_TEST_FAILS=$(( $TOTAL_TEST_FAILS + $TEST_FAILS ))
 done
