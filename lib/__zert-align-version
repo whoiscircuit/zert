@@ -4,11 +4,6 @@ __zert-align-version() {
     local plugin_pin="$2"
     local plugin_dir="$ZERT_PLUGINS_DIR/$plugin_name"
     
-    # Exit quietly if ZERT_NO_LOCKFILE is set
-    if [[ -n "$ZERT_NO_LOCKFILE" ]]; then
-        return 0
-    fi
-    
     if [[ -z "$ZERT_LOCKFILE" ]]; then
         __zert-log error ZERT_LOCKFILE_NOT_DEFINED "variable {{\$ZERT_LOCKFILE}} is not defined"
     fi

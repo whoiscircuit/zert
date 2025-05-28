@@ -17,12 +17,9 @@ fi
 if [[ -z "$ZERT_LOCKFILE" ]]; then
     zstyle -s ':zert:' lockfile ZERT_LOCKFILE || ZERT_LOCKFILE="${ZERT_DIR}/zert.lock"
 fi
-if [[ -z "$ZERT_NO_LOCKFILE" ]]; then
-    zstyle -s ':zert:' no-lockfile ZERT_NO_LOCKFILE || ZERT_NO_LOCKFILE=""
-fi
 
 HERE="${${(%):-%N}:A:h}"
 
 # Add functions and lib directory to fpath and autoload functions
 fpath=("$HERE/functions" "$HERE/lib" $fpath)
-autoload -Uz zert __zert-log __zert-get-plugin-name __zert-fetch __zert-align-version
+autoload -Uz zert __zert-log __zert-get-plugin-name __zert-fetch __zert-align-version __zert-compile

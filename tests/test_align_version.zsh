@@ -39,15 +39,6 @@ function rm() {
   echo "rm $@" >> "$TEMP_DIR/rm.log"
 }
 
-# Exits quietly if ZERT_NO_LOCKFILE is set
-function test_exits_quietly_with_no_lockfile {
-  ZERT_NO_LOCKFILE=1
-  __zert-align-version "test-plugin"
-  assert_equals 0 $?
-  assert_file_not_exists "$TEMP_DIR/log"  # No logging
-}
-test_case test_exits_quietly_with_no_lockfile
-
 #  Errors if ZERT_LOCKFILE is missing
 function test_errors_if_lockfile_missing {
   rm "$ZERT_LOCKFILE"
