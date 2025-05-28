@@ -1,0 +1,29 @@
+# Compile .zsh and .zsh-theme files in the plugin directory
+__zert-compile() {
+    local plugin_name="$1"
+    local plugin_dir="$ZERT_PLUGINS_DIR/$plugin_name"
+    
+    # Skip compilation if ZERT_NO_COMPILE is set
+    if [[ -n "$ZERT_NO_COMPILE" ]]; then
+        __zert-log debug "Skipping compilation for $plugin_name due to ZERT_NO_COMPILE"
+        return 0
+    fi
+    
+    # Check if plugin directory exists
+    if [[ ! -d "$plugin_dir" ]]; then
+        __zert-log error "PLUGIN_MISSING" "Plugin directory $plugin_dir does not exist"
+        return 1
+    fi
+    
+    # Find all .zsh and .zsh-theme files
+    local files=($(find "$plugin_dir" -type f \( -name "*.zsh" -o -name "*.zsh-theme" \)))
+    echo "boo $files"
+    # Compile each file
+    for file in "${files[@]}"; do
+        zcompile "$file" 2>/dev/null || {
+            __zert-log warning "Failed to compile $file for plugin $plugin_name"
+        }
+    done
+    __zert-log info "Compiled $plugin_name to zwc files successfully."
+    return 0
+}
