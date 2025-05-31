@@ -124,6 +124,8 @@ __zert-add() {
     if [[ -n "$no_aliases" ]]; then
         unfunction alias
     fi
+
+    ZERT_PLUGINS_LIST+=("$plugin_name")
     
     return 0
 }

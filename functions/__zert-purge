@@ -1,0 +1,42 @@
+# Purge unused plugins from ZERT_PLUGINS_DIR and clean lockfile
+__zert-purge() {
+    local all_plugins=()
+    for org_dir in "$ZERT_PLUGINS_DIR"/*(N); do
+        for repo_dir in "$org_dir"/*(N); do
+            if [[ -d "$repo_dir" ]]; then
+                all_plugins+=("$(basename "$org_dir")/$(basename "$repo_dir")")
+            fi
+        done
+    done
+    
+    local purge_list=()
+    for plugin in "${all_plugins[@]}"; do
+        if ! (( ${ZERT_PLUGINS_LIST[(I)$plugin]} )); then
+            purge_list+=("$plugin")
+        fi
+    done
+    
+    for plugin in "${purge_list[@]}"; do
+        local plugin_dir="$ZERT_PLUGINS_DIR/$plugin"
+        if [[ -L "$plugin_dir" ]]; then
+            unlink "$plugin_dir" || {
+                __zert-log error PURGE_FAILED "Failed to remove symlink $plugin_dir"
+                continue
+            }
+        else
+            rm -rf "$plugin_dir" || {
+                __zert-log error PURGE_FAILED "Failed to remove directory $plugin_dir"
+                continue
+            }
+        fi
+        __zert-log info "Purged plugin $plugin"
+        
+        if [[ -f "$ZERT_LOCKFILE" ]]; then
+            sed -i "\|^\[$plugin\]=|d" "$ZERT_LOCKFILE" || {
+                __zert-log error LOCKFILE_UPDATE_FAILED "Failed to update lockfile for $plugin"
+            }
+        fi
+    done
+    
+    return 0
+}

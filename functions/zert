@@ -15,6 +15,9 @@ function zert() {
         update)
             __zert-update "$@"
         ;;
+        purge)
+            __zert-purge "$@"
+        ;;
         *)
             __zert-log error UNKNOWN_SUBCOMMAND "Unknown subcommand: {{$subcommand}}" >&2
             return 1

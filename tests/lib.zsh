@@ -61,6 +61,14 @@ function assert_contains {
         return 1
     fi
 }
+function assert_not_contains {
+    if assert_contains "$1" "$2"; then
+        echo "Assertion failed: string '$string' does contain substring '$substring' but it shouldn't"
+        return 1
+    else
+        return 0
+    fi
+}
 
 # Assert a file exists
 function assert_file_exists {
