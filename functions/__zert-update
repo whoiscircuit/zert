@@ -1,0 +1,46 @@
+# __zert-update: Updates existing plugins by pulling changes and updating the lockfile
+__zert-update() {
+    local usage="Usage: __zert-update [options] [plugin1 plugin2 ...]"
+    local opts
+    
+    # Determine plugins to update
+    local plugins=("$@")
+    if [[ ${#plugins} -eq 0 ]]; then
+        plugins=()
+        for dir in "$ZERT_PLUGINS_DIR"/*(N); do
+            if [[ -d "$dir/.git" ]]; then
+                plugins+=("$(basename "$dir")")
+            fi
+        done
+        if [[ ${#plugins} -eq 0 ]]; then
+            __zert-log info "No git plugins found in $ZERT_PLUGINS_DIR"
+            return 0
+        fi
+    fi
+    
+    for plugin in "${plugins[@]}"; do
+        local plugin_dir="$ZERT_PLUGINS_DIR/$plugin"
+        git -C "$plugin_dir" pull || {
+            __zert-log error "Failed to pull changes for $plugin"
+        }
+
+        # Get current HEAD hash
+        local current_hash=$(git -C "$plugin_dir" rev-parse HEAD)
+        if [[ $? -ne 0 ]]; then
+            __zert-log error "Failed to get HEAD hash for $plugin"
+            continue
+        fi
+        
+        # Update lockfile: Remove old entry and add new one
+        [ -f "$ZERT_LOCKFILE" ] && sed -i "/^\[$plugin\]=/d" "$ZERT_LOCKFILE"
+        echo "[$plugin]=$current_hash" >> "$ZERT_LOCKFILE"
+        
+        # Recompile the plugin
+        __zert-compile "$plugin" || {
+            __zert-log error "Failed to compile $plugin"
+            continue
+        }
+    done
+    
+    return 0
+}

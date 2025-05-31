@@ -18,7 +18,7 @@ test_case test_zert_function_is_defined
 function test_zert_dispatches_add_subcommand {
     source "$HERE/../functions/zert"
     # Create a mock add function
-    zert-add() {
+    __zert-add() {
         echo "MOCK_ADD";
     }
     local output=$(zert add test_plugin)
