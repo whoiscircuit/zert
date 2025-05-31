@@ -1,6 +1,5 @@
 #!/usr/bin/env zsh
 # Tests for test framework
-set -e
 
 HERE="${${(%):-%N}:A:h}"
 source "$HERE/lib.zsh"
@@ -52,4 +51,4 @@ function test_assert_contains {
 }
 test_case test_assert_contains
 
-test_summary
+test_summary && return 0 || return 1

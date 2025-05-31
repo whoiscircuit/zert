@@ -1,10 +1,9 @@
 #!/usr/bin/env zsh
 # Test framework for Zert
-set -e
 
 # Global counter for test results
-typeset -i TEST_COUNT=0
-typeset -i TEST_FAILS=0
+TEST_COUNT=0
+TEST_FAILS=0
 
 # Colors
 local RED="\033[31m"

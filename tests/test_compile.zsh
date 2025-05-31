@@ -1,6 +1,5 @@
 #!/usr/bin/env zsh
 # Tests for __zert-compile function
-set -e
 
 HERE="${${(%):-%N}:A:h}"
 source "$HERE/lib.zsh"
@@ -78,6 +77,6 @@ function test_handles_missing_plugin_dir {
 }
 test_case test_handles_missing_plugin_dir
 
-test_summary
+test_summary && return 0 || return 1
 
 rm -rf "${TEMP_DIR:-/dev/null}"

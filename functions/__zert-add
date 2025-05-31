@@ -1,0 +1,129 @@
+__zert-add() {
+    local usage="Usage: __zert-add <source> [options]"
+
+    # Parse options with zparseopts, storing each flag in its own variable
+    zparseopts -E -branch:=branch -b:=branch -name:=name -n:=name -pin:=pin -p:=pin -no-aliases=no_aliases -entry:=entry
+    
+    # Source comes first as the first positional argument
+    local source="$1"
+    if [[ -z "$source" ]]; then
+        __zert-log error MISSING_SOURCE "Source is required"
+        echo "$usage" >&2
+        return 1
+    fi
+    
+    # Extract option values
+    branch="${branch[2]}"
+    name="${name[2]}"
+    pin="${pin[2]}"
+    entry="${entry[2]}"
+    no_aliases="${no_aliases[1]}"
+    
+    # Determine plugin name using __zert-get-plugin-name if --name is not provided
+    local plugin_name
+    if [[ -n "$name_val" ]]; then
+        plugin_name="$name_val"
+    else
+        plugin_name=$(__zert-get-plugin-name "$source")
+        if [[ $? -ne 0 ]]; then
+            __zert-log error INVALID_SOURCE "Failed to get plugin name for $source"
+            return 1
+        fi
+    fi
+    
+    local plugin_dir="$ZERT_PLUGINS_DIR/$plugin_name"
+    local needs_compile=false
+    
+    # Fetch the plugin if it doesn’t exist
+    if [[ ! -d "$plugin_dir" ]]; then
+        local fetch_opts=()
+        [[ -n "$branch" ]] && fetch_opts+=(--branch "$branch")
+        [[ -n "$name"   ]] && fetch_opts+=(--name "$name")
+        __zert-fetch "${fetch_opts[@]}" "$source"
+        if [[ $? -ne 0 ]]; then
+            __zert-log error FETCH_FAILED "Failed to fetch $source"
+            return 1
+        fi
+        needs_compile=true
+    fi
+    
+    
+    # Align version if not aligned
+    if ! __zert-is-aligned "$plugin_name" "$pin"; then
+        __zert-align-version "$plugin_name" "$pin_val"
+        if [[ $? -ne 0 ]]; then
+            __zert-log error ALIGN_FAILED "Failed to align version for $plugin_name"
+            return 1
+        fi
+        needs_compile=true
+    fi
+    
+    # Compile if needed
+    if $needs_compile; then
+        __zert-compile "$plugin_name"
+        if [[ $? -ne 0 ]]; then
+            __zert-log error COMPILE_FAILED "Failed to compile $plugin_name"
+            return 1
+        fi
+    fi
+    
+    # Find the entry file using basename of plugin_name
+    local basename="${plugin_name##*/}"
+    local entry_file
+    if [[ -n "$entry_val" ]]; then
+        entry_file="$plugin_dir/$entry_val"
+        if [[ ! -f "$entry_file" ]]; then
+            __zert-log error ENTRY_FILE_NOT_FOUND "Specified entry file $entry_file does not exist"
+            return 1
+        fi
+    else
+        local candidates=(
+            "$basename.zsh-theme"
+            "*.zsh-theme"
+            "$basename.plugin.zsh"
+            "*.plugin.zsh"
+            "$basename.zsh"
+            "init.zsh"
+            "*.zsh"
+        )
+        for pattern in "${candidates[@]}"; do
+            if [[ "$pattern" == *'*'* ]]; then
+                local files=($plugin_dir/${~pattern}(N))
+                if [[ ${#files[@]} -eq 1 ]]; then
+                    entry_file="${files[1]}"
+                    break
+                elif [[ ${#files[@]} -gt 1 ]]; then
+                    __zert-log error MULTIPLE_ENTRY_FILES "Multiple files match pattern $pattern for $plugin_name"
+                    return 1
+                fi
+            elif [[ -f "$plugin_dir/$pattern" ]]; then
+                entry_file="$plugin_dir/$pattern"
+                break
+            fi
+        done
+        if [[ -z "$entry_file" ]]; then
+            __zert-log error NO_ENTRY_FILE "No entry file found for $plugin_name"
+            return 1
+        fi
+    fi
+    
+    # Handle --no-aliases flag
+    if [[ -n "$no_aliases" ]]; then
+        function alias() { :; }
+    fi
+    
+    # Add to fpath and source the entry file
+    fpath=("$plugin_dir" $fpath)
+    source "$entry_file"
+    if [[ $? -ne 0 ]]; then
+        __zert-log error SOURCE_FAILED "Failed to source $entry_file"
+        return 1
+    fi
+    
+    # Clean up mock alias function
+    if [[ -n "$no_aliases" ]]; then
+        unfunction alias
+    fi
+    
+    return 0
+}

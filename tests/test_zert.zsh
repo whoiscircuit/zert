@@ -1,6 +1,5 @@
 #!/usr/bin/env zsh
 # Tests for zert.plugin.zsh
-set -e
 
 HERE="${${(%):-%N}:A:h}"
 source "$HERE/lib.zsh"
@@ -35,4 +34,4 @@ function test_zert_handles_unknown_subcommand {
 }
 test_case test_zert_handles_unknown_subcommand
 
-test_summary
+test_summary && return 0 || return 1

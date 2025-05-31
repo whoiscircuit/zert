@@ -1,6 +1,5 @@
 #!/usr/bin/env zsh
 # Tests for __zert-align-version function
-set -e
 
 HERE="${${(%):-%N}:A:h}"
 source "$HERE/lib.zsh"
@@ -49,6 +48,7 @@ test_case test_errors_if_lockfile_missing
 
 #  Exits quietly if already aligned
 function test_exits_quietly_if_aligned {
+  function __zert-is-aligned(){return 0; }
   echo "[test-plugin]=current_hash" > "$ZERT_LOCKFILE"
   __zert-align-version "test-plugin"
   assert_equals 0 $?
@@ -56,8 +56,9 @@ function test_exits_quietly_if_aligned {
 }
 test_case test_exits_quietly_if_aligned
 
-#  Aligns version if not aligned
+#  Aligns version to pin if not aligned
 function test_aligns_with_pin_argument {
+  function __zert-is-aligned(){return 1; }
   echo "[test-plugin]=lockfile_hash" > "$ZERT_LOCKFILE"
   __zert-align-version "test-plugin" "pin_hash"
   assert_contains "Checked out pin_hash" "$(cat "$TEMP_DIR/git.log")"
@@ -67,6 +68,7 @@ test_case test_aligns_with_pin_argument
 
 #  Aligns version if not aligned
 function test_aligns_if_not_aligned {
+  function __zert-is-aligned(){return 1; }
   echo "[test-plugin]=lockfile_hash" > "$ZERT_LOCKFILE"
   __zert-align-version "test-plugin"
   assert_contains "Checked out lockfile_hash" "$(cat "$TEMP_DIR/git.log")"
@@ -75,6 +77,7 @@ test_case test_aligns_if_not_aligned
 
 #  Removes zwc files from subdirectories
 function test_removes_zwc {
+  function __zert-is-aligned(){return 1; }
   touch "$ZERT_PLUGINS_DIR/test-plugin/root.zwc"
   mkdir -p "$ZERT_PLUGINS_DIR/test-plugin/subdir"
   touch "$ZERT_PLUGINS_DIR/test-plugin/subdir/test.zwc"
@@ -87,6 +90,7 @@ test_case test_removes_zwc
 
 #  Adds hash if plugin not in lockfile
 function test_adds_hash_if_not_in_lockfile {
+  function __zert-is-aligned(){return 1; }
   echo "" > "$ZERT_LOCKFILE"
   __zert-align-version "test-plugin"
   assert_contains "[test-plugin]=current_hash" "$(cat "$ZERT_LOCKFILE")"
@@ -95,10 +99,11 @@ test_case test_adds_hash_if_not_in_lockfile
 
 #  Errors on git failure
 function test_errors_on_git_failure {
+  function __zert-is-aligned(){return 1; }
   function git() { return 1; }
   echo "[test-plugin]=lockfile_hash" > "$ZERT_LOCKFILE"
   assert_fails __zert-align-version "test-plugin"
 }
 test_case test_errors_on_git_failure
 
-test_summary
+test_summary && return 0 || return 1

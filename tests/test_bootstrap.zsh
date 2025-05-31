@@ -1,6 +1,5 @@
 #!/usr/bin/env zsh
 # Tests for zert-bootstrap.zsh
-set -e
 
 HERE="${${(%):-%N}:A:h}"
 source "$HERE/lib.zsh"
@@ -75,4 +74,4 @@ function test_bootstrap_fails_if_git_clone_fails {
 }
 test_case test_bootstrap_fails_if_git_clone_fails
 
-test_summary
+test_summary && return 0 || return 1

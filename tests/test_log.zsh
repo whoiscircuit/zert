@@ -1,6 +1,5 @@
 #!/usr/bin/env zsh
 # Tests for lib/__zert-log
-set -e
 
 HERE="${${(%):-%N}:A:h}"
 source "$HERE/lib.zsh"
@@ -116,4 +115,4 @@ test_case test_zert_log_error_with_error_code_and_highlighted_text
 
 rm $TEMP_OUT $TEMP_ERR
 
-test_summary
+test_summary && return 0 || return 1

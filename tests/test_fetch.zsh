@@ -1,6 +1,5 @@
 #!/usr/bin/env zsh
 # Tests for __zert-fetch function
-set -e
 
 HERE="${${(%):-%N}:A:h}"
 source "$HERE/lib.zsh"
@@ -164,4 +163,4 @@ test_case test_fetch_with_treeless_clone_style
 rm -f "${TEMP_LOG:-/dev/null}"
 rm -rf "${TEMP_DIR:-/dev/null}"
 
-test_summary
+test_summary && return 0 || return 1

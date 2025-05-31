@@ -10,7 +10,7 @@ function zert() {
     shift
     case "$subcommand" in
         add)
-            zert-add "$@"
+            __zert-add "$@"
         ;;
         *)
             __zert-log error UNKNOWN_SUBCOMMAND "Unknown subcommand: {{$subcommand}}" >&2

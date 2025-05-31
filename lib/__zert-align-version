@@ -18,18 +18,19 @@ __zert-align-version() {
         __zert-log error GIT_REV_PARSE_FAILED "Failed to get HEAD hash for {{$plugin_name}}"
         return 1
     fi
+
+    if __zert-is-aligned "$plugin_name" "$plugin_pin"; then
+        return 0;
+    fi
     
     # Check lockfile for plugin hash
-    
     local lockfile_hash=$(grep "^\[$plugin_name\]=" "$ZERT_LOCKFILE" | cut -d'=' -f2)
     if [[ -n "$plugin_pin" ]]; then
-        if [[ "$current_hash" != "$plugin_pin" ]]; then
-            find "$plugin_dir" -type f -name "*.zwc" -exec rm -f {} \;
-            git -C "$plugin_dir" checkout "$plugin_pin" 2>/dev/null || {
-                __zert-log error GIT_CHECKOUT_FAILED "Failed to checkout $plugin_pin for $plugin_name"
-                return 1
-            }
-        fi
+        find "$plugin_dir" -type f -name "*.zwc" -exec rm -f {} \;
+        git -C "$plugin_dir" checkout "$plugin_pin" 2>/dev/null || {
+            __zert-log error GIT_CHECKOUT_FAILED "Failed to checkout $plugin_pin for $plugin_name"
+            return 1
+        }
         if [[ -n "$lockfile_hash" ]]; then
             if [[ "$plugin_pin" != "$lockfile_hash" ]]; then
                 sed -i "s/^\(\[$plugin_name\]=\).*/\1$plugin_pin/" "$ZERT_LOCKFILE"
@@ -38,14 +39,11 @@ __zert-align-version() {
             echo "[$plugin_name]=$plugin_pin" >> "$ZERT_LOCKFILE"
         fi
     elif [[ -n "$lockfile_hash" ]]; then
-        # If not aligned, remove *.zwc and checkout lockfile hash
-        if [[ "$current_hash" != "$lockfile_hash" ]]; then
-            find "$plugin_dir" -type f -name "*.zwc" -exec rm -f {} \;
-            git -C "$plugin_dir" checkout "$lockfile_hash" 2>/dev/null || {
-                __zert-log error GIT_CHECKOUT_FAILED "Failed to checkout $lockfile_hash for $plugin_name"
-                return 1
-            }
-        fi
+        find "$plugin_dir" -type f -name "*.zwc" -exec rm -f {} \;
+        git -C "$plugin_dir" checkout "$lockfile_hash" 2>/dev/null || {
+            __zert-log error GIT_CHECKOUT_FAILED "Failed to checkout $lockfile_hash for $plugin_name"
+            return 1
+        }
     else
         # Add current hash to lockfile if not present
         echo "[$plugin_name]=$current_hash" >> "$ZERT_LOCKFILE"
