@@ -26,5 +26,8 @@ if [[ -n "${failed_files[@]}" ]]; then
     echo "${YELLOW}FAILED_TESTS:${RESET}"
     echo "${failed_files[*]}"
     return 1;
+else
+    echo ""
+    echo "All Tests Passed!"
+    return 0;
 fi
-return 0;
