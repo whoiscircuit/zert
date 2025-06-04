@@ -1,7 +1,8 @@
-# Align plugin version with lockfile
+# Align plugin version with lockfile. this function assumes that the plugin is not aligned. so ues __zert-is-aligned before calling it
 __zert-align-version() {
     local plugin_name="$1"
-    local plugin_pin="$2"
+    local plugin_branch="$2"
+    local plugin_pin="$3"
     local plugin_dir="$ZERT_PLUGINS_DIR/$plugin_name"
     
     if [[ -z "$ZERT_LOCKFILE" ]]; then
@@ -18,36 +19,44 @@ __zert-align-version() {
         __zert-log error GIT_REV_PARSE_FAILED "Failed to get HEAD hash for {{$plugin_name}}"
         return 1
     fi
-
-    if __zert-is-aligned "$plugin_name" "$plugin_pin"; then
-        return 0;
-    fi
     
     # Check lockfile for plugin hash
-    local lockfile_hash=$(grep "^\[$plugin_name\]=" "$ZERT_LOCKFILE" | cut -d'=' -f2)
-    if [[ -n "$plugin_pin" ]]; then
-        find "$plugin_dir" -type f -name "*.zwc" -exec rm -f {} \;
+    local lockfile_hash=$(__zert-get-plugin-info "$plugin_name" hash)
+    local lockfile_branch=$(__zert-get-plugin-info "$plugin_name" branch)
+    local lockfile_pin=$(__zert-get-plugin-info "$plugin_name" pin)
+    find "$plugin_dir" -type f -name "*.zwc" -exec rm -f {} \;
+    if [[ "$plugin_pin" != "$lockfile_pin" ]]; then
         git -C "$plugin_dir" checkout "$plugin_pin" 2>/dev/null || {
             __zert-log error GIT_CHECKOUT_FAILED "Failed to checkout $plugin_pin for $plugin_name"
             return 1
         }
-        if [[ -n "$lockfile_hash" ]]; then
-            if [[ "$plugin_pin" != "$lockfile_hash" ]]; then
-                sed -i "s/^\(\[$plugin_name\]=\).*/\1$plugin_pin/" "$ZERT_LOCKFILE"
-            fi
+        __zert-set-plugin-info "$plugin_name" "$plugin_pin" pin:$plugin_pin branch:$plugin_branch
+        return 0
+    fi
+    if [[ "$plugin_branch" != "$lockfile_branch" ]]; then
+        if [[ -z "$plugin_branch" ]]; then
+            local branch="$(git -C "$plugin_dir" symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')"
         else
-            echo "[$plugin_name]=$plugin_pin" >> "$ZERT_LOCKFILE"
+            local branch="$plugin_branch"
         fi
-    elif [[ -n "$lockfile_hash" ]]; then
-        find "$plugin_dir" -type f -name "*.zwc" -exec rm -f {} \;
+        git -C "$plugin_dir" checkout "$branch" || {
+            __zert-log error GIT_CHECKOUT_FAILED "Failed to checkout branch $plugin_branch for $plugin_name"
+            return 1
+        }
+        local new_hash=$(git -C "$plugin_dir" rev-parse HEAD 2>/dev/null)
+        __zert-set-plugin-info "$plugin_name" "$new_hash" pin:$plugin_pin branch:$plugin_branch
+        return 0
+    fi
+    if [[ -z "$lockfile_hash" ]]; then
+        __zert-set-plugin-info "$plugin_name" "$current_hash" pin:$plugin_pin branch:$plugin_branch
+        return 0
+    fi
+    if [[ "$lockfile_hash" != "$current_hash" ]]; then
         git -C "$plugin_dir" checkout "$lockfile_hash" 2>/dev/null || {
             __zert-log error GIT_CHECKOUT_FAILED "Failed to checkout $lockfile_hash for $plugin_name"
             return 1
         }
-    else
-        # Add current hash to lockfile if not present
-        echo "[$plugin_name]=$current_hash" >> "$ZERT_LOCKFILE"
+        return 0
     fi
-    
     return 0
 }

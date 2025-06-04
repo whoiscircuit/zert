@@ -1,0 +1,28 @@
+# Set or update plugin info in ZERT_LOCKFILE
+# Usage: __zert-set-plugin-info <plugin_name> <hash> [key1:value1 key2:value2 ...]
+__zert-set-plugin-info() {
+  local plugin="$1"
+  local hash="$2"
+  shift 2
+  local attrs=("$@")
+  if [[ -z "$plugin" || -z "$hash" ]]; then
+    __zert-log error "Plugin name and hash are required"
+    return 1
+  fi
+  # Remove existing entry
+  if [[ -f "$ZERT_LOCKFILE" ]]; then
+    sed -i "\|^\[$plugin\]=|d" "$ZERT_LOCKFILE"
+  fi
+  # Build new entry
+  local lockfile_entry="[$plugin]=$hash"
+  for attr in "${attrs[@]}"; do
+    local key=${attr%%:*}
+    local value=${attr#*:}
+    if [[ -n "$key" && -n "$value" ]]; then
+      lockfile_entry="$lockfile_entry,$key:$value"
+    fi
+  done
+  # Write to lockfile
+  echo "$lockfile_entry" >> "$ZERT_LOCKFILE"
+  return 0
+}

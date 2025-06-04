@@ -17,7 +17,6 @@ __zert-compile() {
     
     # Find all .zsh and .zsh-theme files
     local files=($(find "$plugin_dir" -type f \( -name "*.zsh" -o -name "*.zsh-theme" \)))
-    echo "boo $files"
     # Compile each file
     for file in "${files[@]}"; do
         zcompile "$file" 2>/dev/null || {

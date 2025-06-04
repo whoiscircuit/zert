@@ -1,16 +1,18 @@
 __zert-add() {
     local usage="Usage: __zert-add <source> [options]"
 
-    # Parse options with zparseopts, storing each flag in its own variable
-    zparseopts -E -branch:=branch -b:=branch -name:=name -n:=name -pin:=pin -p:=pin -no-aliases=no_aliases -entry:=entry
-    
     # Source comes first as the first positional argument
     local source="$1"
+    shift;
     if [[ -z "$source" ]]; then
         __zert-log error MISSING_SOURCE "Source is required"
         echo "$usage" >&2
         return 1
     fi
+
+    # Parse options with zparseopts, storing each flag in its own variable
+    local branch name pin no_aliases entry
+    zparseopts -D -E -- {b,-branch}:=branch {n,-name}:=name {p,-pin}:=pin -no-aliases=no_aliases -entry:=entry
     
     # Extract option values
     branch="${branch[2]}"
@@ -21,8 +23,8 @@ __zert-add() {
     
     # Determine plugin name using __zert-get-plugin-name if --name is not provided
     local plugin_name
-    if [[ -n "$name_val" ]]; then
-        plugin_name="$name_val"
+    if [[ -n "$name" ]]; then
+        plugin_name="$name"
     else
         plugin_name=$(__zert-get-plugin-name "$source")
         if [[ $? -ne 0 ]]; then
@@ -47,10 +49,9 @@ __zert-add() {
         needs_compile=true
     fi
     
-    
     # Align version if not aligned
-    if ! __zert-is-aligned "$plugin_name" "$pin"; then
-        __zert-align-version "$plugin_name" "$pin_val"
+    if ! __zert-is-aligned "$plugin_name" "$branch" "$pin"; then
+        __zert-align-version "$plugin_name" "$branch" "$pin" 
         if [[ $? -ne 0 ]]; then
             __zert-log error ALIGN_FAILED "Failed to align version for $plugin_name"
             return 1
@@ -70,8 +71,8 @@ __zert-add() {
     # Find the entry file using basename of plugin_name
     local basename="${plugin_name##*/}"
     local entry_file
-    if [[ -n "$entry_val" ]]; then
-        entry_file="$plugin_dir/$entry_val"
+    if [[ -n "$entry" ]]; then
+        entry_file="$plugin_dir/$entry"
         if [[ ! -f "$entry_file" ]]; then
             __zert-log error ENTRY_FILE_NOT_FOUND "Specified entry file $entry_file does not exist"
             return 1
@@ -93,8 +94,7 @@ __zert-add() {
                     entry_file="${files[1]}"
                     break
                 elif [[ ${#files[@]} -gt 1 ]]; then
-                    __zert-log error MULTIPLE_ENTRY_FILES "Multiple files match pattern $pattern for $plugin_name"
-                    return 1
+                    break
                 fi
             elif [[ -f "$plugin_dir/$pattern" ]]; then
                 entry_file="$plugin_dir/$pattern"

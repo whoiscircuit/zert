@@ -1,40 +1,43 @@
 # Check if plugin is aligned with lockfile or pin
 __zert-is-aligned() {
     local plugin_name="$1"
-    local pin="$2"
+    local branch="$2"
+    local pin="$3"
     local plugin_dir="$ZERT_PLUGINS_DIR/$plugin_name"
     
     if [[ ! -d "$plugin_dir" ]]; then
         __zert-log error "MISSING_PLUGIN" "plugin $plugin_name doesn't exist at $ZERT_PLUGIN_DIR/$plugin_name"
     fi
-    
-    # Get current commit hash
+
+    if [[ ! -d "$plugin_dir/.git" ]]; then
+        # non git plugins are always assumed to be aligned
+        return 0;
+    fi
+
+    if [[ ! -f "$ZERT_LOCKFILE" ]]; then
+        return 1
+    fi
+
     local current_hash=$(git -C "$plugin_dir" rev-parse HEAD 2>/dev/null)
     if [[ $? -ne 0 ]]; then
         __zert-log error "GIT_REV_PARSE_FAILED" "Failed to get HEAD hash for $plugin_name"
         return 1
     fi
     
-    # Check against pin if provided
-    if [[ -n "$pin" ]]; then
-        if [[ "$current_hash" == "$pin" ]]; then
-            return 0
-        else
-            return 1
-        fi
-    fi
+
     
-    # Otherwise, check against lockfile
-    if [[ ! -f "$ZERT_LOCKFILE" ]]; then
-        return 1
-    fi
-    
-    local lockfile_hash=$(grep "^\[$plugin_name\]=" "$ZERT_LOCKFILE" | cut -d'=' -f2)
+    local lockfile_hash=$(__zert-get-plugin-info "$plugin_name" hash)
+    local lockfile_branch=$(__zert-get-plugin-info "$plugin_name" branch)
+    local lockfile_pin=$(__zert-get-plugin-info "$plugin_name" pin)
     if [[ -z "$lockfile_hash" ]]; then
         return 1  # Not in lockfile, assume not aligned
-    elif [[ "$current_hash" == "$lockfile_hash" ]]; then
-        return 0
-    else
+    elif [[ "$lockfile_pin" != "$pin" ]]; then
+        return 1;
+    elif [[ "$branch" != "$lockfile_branch" ]]; then
+        return 1 # Misaligned branches. the user probably changed the branch in zert add
+    elif [[ "$current_hash" != "$lockfile_hash" ]]; then
         return 1
+    else
+        return 0
     fi
 }

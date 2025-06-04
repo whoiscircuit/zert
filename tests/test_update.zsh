@@ -9,11 +9,11 @@ source "$HERE/../functions/__zert-update"
 TEMP_DIR=$(mktemp -d)
 ZERT_PLUGINS_DIR="$TEMP_DIR/plugins"
 ZERT_LOCKFILE="$TEMP_DIR/zert.lock"
-mkdir -p "$ZERT_PLUGINS_DIR/plugin1/.git"
-mkdir -p "$ZERT_PLUGINS_DIR/plugin2/.git"
-mkdir -p "$ZERT_PLUGINS_DIR/local-plugin"  # Not a git repo
-echo "[plugin1]=old_hash" > "$ZERT_LOCKFILE"
-echo "[plugin2]=old_hash" >> "$ZERT_LOCKFILE"
+mkdir -p "$ZERT_PLUGINS_DIR/repo/plugin1/.git"
+mkdir -p "$ZERT_PLUGINS_DIR/repo/plugin2/.git"
+mkdir -p "$ZERT_PLUGINS_DIR/local/local-plugin"  # Not a git repo
+echo "[repo/plugin1]=old_hash" > "$ZERT_LOCKFILE"
+echo "[repo/plugin2]=old_hash" >> "$ZERT_LOCKFILE"
 
 # Mock git function to handle -C option
 function git() {

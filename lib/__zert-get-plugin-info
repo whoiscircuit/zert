@@ -1,0 +1,29 @@
+# Get plugin info from ZERT_LOCKFILE
+# Usage: __zert-get-plugin-info <plugin_name> <field>
+# Returns: Value of the specified field (hash, pin, branch, etc.)
+__zert-get-plugin-info() {
+    local plugin="$1"
+    local field="$2"
+    if [[ -z "$plugin" || -z "$field" ]]; then
+        __zert-log error "Plugin name and field are required"
+        return 1
+    fi
+    if [[ ! -f "$ZERT_LOCKFILE" ]]; then
+        __zert-log error "Lockfile $ZERT_LOCKFILE not found"
+        return 1
+    fi
+    local entry=$(grep "^\[$plugin\]=" "$ZERT_LOCKFILE" 2>/dev/null)
+    if [[ -z "$entry" ]]; then
+        return 1
+    fi
+    if [[ "$field" == "hash" ]]; then
+        echo "$entry" | cut -d'=' -f2 | cut -d',' -f1
+        return 0
+    fi
+    local value=$(echo "$entry" | grep -o "$field:[^,]*" | cut -d':' -f2)
+    if [[ -n "$value" ]]; then
+        echo "$value"
+        return 0
+    fi
+    return 1
+}

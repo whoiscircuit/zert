@@ -68,7 +68,7 @@ __zert-fetch(){
             
             # Clone with optional branch
             local branch_opt=""
-            [[ -n "${branch}" ]] && branch_opt="--branch ${branch}"
+            [[ -n "${branch}" ]] && branch_opt="--branch=${branch}"
             
             # Clone accordingly to clone style ZERT_CLONE_STYLE
             if [[ "$ZERT_CLONE_STYLE" == "normal" ]]; then

@@ -1,117 +1,109 @@
 __zert-update() {
-  set -x
-  local usage="Usage: __zert-update [plugin1 plugin2 ...] [--review]"
-  local review=0
-  local plugins=()
-
-  # Collect plugins and check for --review
-  for arg in "$@"; do
-    if [[ "$arg" == "--review" ]]; then
-      review=1
-    else
-      plugins+=("$arg")
-    fi
-  done
-
-  # If --review is specified, check for fzf immediately and exit if not installed
-  if [[ $review -eq 1 ]]; then
-    if ! command -v fzf >/dev/null 2>&1; then
-      __zert-log error "fzf is required for --review but is not installed"
-      return 1
-    fi
-  fi
-
-  # If no plugins specified, find all git plugins recursively
-  if [[ ${#plugins[@]} -eq 0 ]]; then
-    plugins=()
-    for git_dir in "$ZERT_PLUGINS_DIR"/**/.git(N); do
-      if [[ -d "$git_dir" ]]; then
-        local plugin_dir=${git_dir:h}
-        local plugin_name=${plugin_dir#$ZERT_PLUGINS_DIR/}
-        plugins+=("$plugin_name")
-      fi
+    local usage="Usage: __zert-update [plugin1 plugin2 ...] [--review]"
+    local review=0
+    local plugins=()
+    
+    # Collect plugins and check for --review
+    for arg in "$@"; do
+        if [[ "$arg" == "--review" ]]; then
+            review=1
+        else
+            plugins+=("$arg")
+        fi
     done
+    
+    # If --review is specified, check for fzf immediately and exit if not installed
+    if [[ $review -eq 1 ]]; then
+        if ! command -v fzf >/dev/null 2>&1; then
+            __zert-log error "fzf is required for --review but is not installed"
+            return 1
+        fi
+    fi
+    
+    # If no plugins specified, find all git plugins recursively
     if [[ ${#plugins[@]} -eq 0 ]]; then
-      __zert-log info "No git plugins found in $ZERT_PLUGINS_DIR"
-      return 1
+        plugins=()
+        for git_dir in "$ZERT_PLUGINS_DIR"/**/.git(N); do
+            if [[ -d "$git_dir" ]]; then
+                local plugin_dir=${git_dir:h}
+                local plugin_name=${plugin_dir#$ZERT_PLUGINS_DIR/}
+                plugins+=("$plugin_name")
+            fi
+        done
+        if [[ ${#plugins[@]} -eq 0 ]]; then
+            __zert-log info "No git plugins found in $ZERT_PLUGINS_DIR"
+            return 1
+        fi
     fi
-  fi
-
-  # Fetch updates for all plugins
-  for plugin in "${plugins[@]}"; do
-    local plugin_dir="$ZERT_PLUGINS_DIR/$plugin"
-    if [[ ! -d "$plugin_dir/.git" ]]; then
-      __zert-log error "Plugin $plugin is not a git repository"
-      continue
-    fi
-    git -C "$plugin_dir" fetch origin || {
-      __zert-log error "Failed to fetch updates for $plugin"
-    }
-  done
-
-  # Filter plugins to those with new commits
-  local plugins_with_updates=()
-  for plugin in "${plugins[@]}"; do
-    local plugin_dir="$ZERT_PLUGINS_DIR/$plugin"
-    local current_branch=$(git -C "$plugin_dir" rev-parse --abbrev-ref HEAD)
-    if [[ $? -ne 0 ]]; then
-      __zert-log error "Failed to get current branch for $plugin"
-      continue
-    fi
-    local commit_count=$(git -C "$plugin_dir" rev-parse HEAD..origin/"$current_branch" 2>/dev/null | wc -l)
-    if [[ $commit_count -gt 0 ]]; then
-      plugins_with_updates+=("$plugin")
-    else
-      __zert-log info "No new commits for $plugin"
-    fi
-  done
-
-  # If no plugins have updates, exit
-  if [[ ${#plugins_with_updates[@]} -eq 0 ]]; then
-    __zert-log info "No plugins have updates"
-    return 0
-  fi
-
-  # Process plugins with updates based on review flag
-  local accepted_plugins=()
-  if [[ $review -eq 1 ]]; then
-    # Review each plugin with updates
-    for plugin in "${plugins_with_updates[@]}"; do
-      local decision=$(__zert-review-plugin "$plugin")
-      if [[ "$decision" == "accept" ]]; then
-        accepted_plugins+=("$plugin")
-      fi
+    
+    # Fetch updates for all plugins
+    for plugin in "${plugins[@]}"; do
+        local plugin_dir="$ZERT_PLUGINS_DIR/$plugin"
+        if [[ ! -d "$plugin_dir/.git" ]]; then
+            __zert-log error "Plugin $plugin is not a git repository"
+            continue
+        fi
+        local lockfile_pin=$(__zert-get-plugin-info "$plugin" pin)
+        if [[ -n "$lockfile_pin" ]]; then
+            continue;
+        fi
+        git -C "$plugin_dir" fetch origin || {
+            __zert-log error "Failed to fetch updates for $plugin"
+        }
     done
-  else
-    # No review, accept all plugins with updates
-    accepted_plugins=("${plugins_with_updates[@]}")
-  fi
-
-  # Update accepted plugins
-  for plugin in "${accepted_plugins[@]}"; do
-    local plugin_dir="$ZERT_PLUGINS_DIR/$plugin"
-    git -C "$plugin_dir" pull || {
-      __zert-log error "Failed to pull changes for $plugin"
-      continue
-    }
-
-    # Get current HEAD hash
-    local current_hash=$(git -C "$plugin_dir" rev-parse HEAD)
-    if [[ $? -ne 0 ]]; then
-      __zert-log error "Failed to get HEAD hash for $plugin"
-      continue
+    
+    # Filter plugins to those with new commits
+    local plugins_with_updates=()
+    for plugin in "${plugins[@]}"; do
+        local plugin_dir="$ZERT_PLUGINS_DIR/$plugin"
+        local branch="$(__zert-get-plugin-info "$plugin" branch)"
+        if [ -z "$branch" ] && branch="HEAD"
+        local commit_count=$(git -C "$plugin_dir" rev-parse HEAD..origin/"$current_branch" 2>/dev/null | wc -l)
+        if [[ $commit_count -gt 0 ]]; then
+            plugins_with_updates+=("$plugin")
+        else
+            __zert-log info "No new commits for $plugin"
+        fi
+    done
+    
+    # If no plugins have updates, exit
+    if [[ ${#plugins_with_updates[@]} -eq 0 ]]; then
+        __zert-log info "No plugins have updates"
+        return 0
     fi
+    
+    # Process plugins with updates based on review flag
+    local accepted_plugins=()
+    if [[ $review -eq 1 ]]; then
+        # Review each plugin with updates
+        for plugin in "${plugins_with_updates[@]}"; do
+            local decision=$(__zert-review-plugin "$plugin")
+            if [[ "$decision" == "accept" ]]; then
+                accepted_plugins+=("$plugin")
+            fi
+        done
+    else
+        # No review, accept all plugins with updates
+        accepted_plugins=("${plugins_with_updates[@]}")
+    fi
+    
+    # Update accepted plugins
+    for plugin in "${accepted_plugins[@]}"; do
 
-    # Update lockfile: Remove old entry and add new one
-    [ -f "$ZERT_LOCKFILE" ] && sed -i "/^\[$plugin\]=/d" "$ZERT_LOCKFILE"
-    echo "[$plugin]=$current_hash" >> "$ZERT_LOCKFILE"
+        local branch="$(__zert-get-plugin-info "$plugin" branch)"
+        local plugin_dir="$ZERT_PLUGINS_DIR/$plugin"
+        [[ -z "$branch" ]] && branch="$(git -C "$plugin_dir" symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')"
+        git -C "$plugin_dir" pull origin "$branch" || {
+            __zert-log error "Failed to pull updates for $plugin"
+            continue
+        }
 
-    # Recompile the plugin
-    __zert-compile "$plugin" || {
-      __zert-log error "Failed to compile $plugin"
-      continue
-    }
-  done
-
-  return 0
+        local new_hash="$(git -C "$plugin_dir" rev-parse origin/$branch 2>/dev/null)"
+        
+        __zert-set-plugin-info "$plugin" "$new_hash"
+        __zert-align-version "$plugin" "$(__zert-get-plugin-info "$plugin" branch)"
+        __zert-compile "$plugin"
+    done
+    
+    return 0
 }

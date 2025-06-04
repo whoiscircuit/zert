@@ -49,6 +49,7 @@ test_case test_errors_if_lockfile_missing
 #  Exits quietly if already aligned
 function test_exits_quietly_if_aligned {
   function __zert-is-aligned(){return 0; }
+  rm -f "$TEMP_DIR/git.log"
   echo "[test-plugin]=current_hash" > "$ZERT_LOCKFILE"
   __zert-align-version "test-plugin"
   assert_equals 0 $?
