@@ -90,7 +90,6 @@ __zert-update() {
     
     # Update accepted plugins
     for plugin in "${accepted_plugins[@]}"; do
-
         local branch="$(__zert-get-plugin-info "$plugin" branch)"
         local plugin_dir="$ZERT_PLUGINS_DIR/$plugin"
         [[ -z "$branch" ]] && branch="$(git -C "$plugin_dir" symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')"

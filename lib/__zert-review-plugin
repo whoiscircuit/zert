@@ -1,0 +1,42 @@
+# Review updates for a single plugin using fzf
+__zert-review-plugin() {
+    local plugin="$1"
+    local plugin_dir="$ZERT_PLUGINS_DIR/$plugin"
+    
+    # Get the current branch
+    local current_branch="$(__zert-get-plugin-info $plugin branch)"
+    [[ -z "$current_branch" ]] && current_branch="HEAD"
+    if [[ $? -ne 0 ]]; then
+        __zert-log error "Failed to get current branch for $plugin"
+        return 1
+    fi
+    
+    # Generate commit list from HEAD to origin/<current_branch>
+    local commit_list=$(git -C "$plugin_dir" log --oneline HEAD..origin/"$current_branch")
+    if [[ -z "$commit_list" ]]; then
+        __zert-log info "No new commits for $plugin"
+        return 0
+    fi
+    
+    # FZF command with preview and keybindings
+    local HL="\033[7m"
+    local NC="\033[0m"
+    printf "\033[2J\033[H" >&2
+    echo -e "${HL}Reviewing $plugin \n${NC}" >&2
+    echo "${HL} ↑↓/j/k ${NC} select commits     ${HL} PgUp/PgDn/u/d ${NC} scroll diff     ${HL} Enter ${NC} accept this update     ${HL} Esc/C-c ${NC} skip this update" >&2
+    echo "" >&2
+    echo "$commit_list" | fzf \
+    --height="$ZERT_UI_HEIGHT_PERCENT%" \
+    --preview="git -C '$plugin_dir' show --color=always {1} | less -R +G" \
+    --preview-window=right:50% \
+    --bind change:top \
+    --reverse \
+    --bind 'j:down,k:up,pgup:preview-up,u:preview-up,pgdn:preview-down,d:preview-down,q:abort' \
+    --phony --no-clear > /dev/null
+    
+    if [[ "$?" -eq 0 ]]; then
+        echo "accept"
+    else
+        echo "skip"
+    fi
+}
