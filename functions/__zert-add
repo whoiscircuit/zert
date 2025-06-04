@@ -48,7 +48,6 @@ __zert-add() {
         fi
         needs_compile=true
     fi
-    
     # Align version if not aligned
     if ! __zert-is-aligned "$plugin_name" "$branch" "$pin"; then
         __zert-align-version "$plugin_name" "$branch" "$pin" 

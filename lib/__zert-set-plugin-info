@@ -4,24 +4,61 @@ __zert-set-plugin-info() {
   local plugin="$1"
   local hash="$2"
   shift 2
-  local attrs=("$@")
+  local new_attrs=("$@")
   if [[ -z "$plugin" || -z "$hash" ]]; then
     __zert-log error "Plugin name and hash are required"
     return 1
   fi
+
+  # Read existing entry
+  local existing_entry
+  local existing_attrs=()
+  if [[ -f "$ZERT_LOCKFILE" ]]; then
+    existing_entry=$(grep "^\[$plugin\]=" "$ZERT_LOCKFILE" 2>/dev/null)
+    if [[ -n "$existing_entry" ]]; then
+      # Extract existing attributes (everything after hash)
+      local attr_string=$(echo "$existing_entry" | cut -d',' -f2- 2>/dev/null)
+      if [[ -n "$attr_string" && "$attr_string" != "$existing_entry" ]]; then
+        # Split attributes into array
+        while IFS=',' read -r attr; do
+          [[ -n "$attr" ]] && existing_attrs+=("$attr")
+        done <<< "$attr_string,"
+      fi
+    fi
+  fi
+
+  # Build attribute map (key:value pairs)
+  typeset -A attr_map
+  for attr in "${existing_attrs[@]}"; do
+    local key=${attr%%:*}
+    local value=${attr#*:}
+    [[ -n "$key" ]] && attr_map[$key]=$value
+  done
+
+  # Update with new attributes
+  for attr in "${new_attrs[@]}"; do
+    local key=${attr%%:*}
+    local value=${attr#*:}
+    if [[ -n "$key" ]]; then
+      if [[ -z "$value" ]]; then
+        unset "attr_map[$key]" # Remove attribute if value is empty
+      else
+        attr_map[$key]=$value # Update or add attribute
+      fi
+    fi
+  done
+
   # Remove existing entry
   if [[ -f "$ZERT_LOCKFILE" ]]; then
     sed -i "\|^\[$plugin\]=|d" "$ZERT_LOCKFILE"
   fi
+
   # Build new entry
   local lockfile_entry="[$plugin]=$hash"
-  for attr in "${attrs[@]}"; do
-    local key=${attr%%:*}
-    local value=${attr#*:}
-    if [[ -n "$key" && -n "$value" ]]; then
-      lockfile_entry="$lockfile_entry,$key:$value"
-    fi
+  for key in "${(@k)attr_map}"; do
+    lockfile_entry="$lockfile_entry,$key:${attr_map[$key]}"
   done
+
   # Write to lockfile
   echo "$lockfile_entry" >> "$ZERT_LOCKFILE"
   return 0

@@ -58,8 +58,9 @@ __zert-update() {
         local plugin_dir="$ZERT_PLUGINS_DIR/$plugin"
         local branch="$(__zert-get-plugin-info "$plugin" branch)"
         if [ -z "$branch" ] && branch="HEAD"
-        local commit_count=$(git -C "$plugin_dir" rev-parse HEAD..origin/"$current_branch" 2>/dev/null | wc -l)
-        if [[ $commit_count -gt 0 ]]; then
+        local current_hash="$(git -C "$plugin_dir" rev-parse HEAD 2>/dev/null)"
+        local origin_hash="$(git -C "$plugin_dir" rev-parse origin/"$branch" 2>/dev/null)"
+        if [[ "$current_hash" != "$origin_hash" ]]; then
             plugins_with_updates+=("$plugin")
         else
             __zert-log info "No new commits for $plugin"
