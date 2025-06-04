@@ -7,6 +7,7 @@ __zert-align-version() {
     
     if [[ -z "$ZERT_LOCKFILE" ]]; then
         __zert-log error ZERT_LOCKFILE_NOT_DEFINED "variable {{\$ZERT_LOCKFILE}} is not defined"
+        return 1
     fi
     
     if [[ ! -f "$ZERT_LOCKFILE" ]]; then

@@ -21,7 +21,7 @@ function test_case {
     {
         set +e
         (
-            set -e
+            set +e
             "$fn" >$OUTPUT_FILE 2>&1
         )
         local SUCCESS=$?

@@ -7,6 +7,7 @@ __zert-is-aligned() {
     
     if [[ ! -d "$plugin_dir" ]]; then
         __zert-log error "MISSING_PLUGIN" "plugin $plugin_name doesn't exist at $ZERT_PLUGIN_DIR/$plugin_name"
+        return 1
     fi
 
     if [[ ! -d "$plugin_dir/.git" ]]; then

@@ -118,7 +118,7 @@ function test_fetch_with_branch {
     __zert-fetch --branch "$branch" "$source"
     assert_file_exists "$expected_dest/.git/info/exclude"
     assert_contains "*.zwc" "$(cat "$expected_dest/.git/info/exclude")"
-    assert_contains "git clone --branch $branch https://github.com/zsh-users/zsh-plugin-5.git $expected_dest" "$(cat "$TEMP_LOG")"
+    assert_contains "git clone --branch=$branch https://github.com/zsh-users/zsh-plugin-5.git $expected_dest" "$(cat "$TEMP_LOG")"
 }
 test_case test_fetch_with_branch
 

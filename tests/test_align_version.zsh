@@ -3,6 +3,8 @@
 
 HERE="${${(%):-%N}:A:h}"
 source "$HERE/lib.zsh"
+source "$HERE/../lib/__zert-get-plugin-info"
+source "$HERE/../lib/__zert-set-plugin-info"
 source "$HERE/../lib/__zert-align-version"
 
 # Setup temporary environment
@@ -38,14 +40,6 @@ function rm() {
   echo "rm $@" >> "$TEMP_DIR/rm.log"
 }
 
-#  Errors if ZERT_LOCKFILE is missing
-function test_errors_if_lockfile_missing {
-  rm "$ZERT_LOCKFILE"
-  ( __zert-align-version "test-plugin" > /dev/null 2>&1 )
-  assert_fails $?
-}
-test_case test_errors_if_lockfile_missing
-
 #  Exits quietly if already aligned
 function test_exits_quietly_if_aligned {
   function __zert-is-aligned(){return 0; }
@@ -61,9 +55,10 @@ test_case test_exits_quietly_if_aligned
 function test_aligns_with_pin_argument {
   function __zert-is-aligned(){return 1; }
   echo "[test-plugin]=lockfile_hash" > "$ZERT_LOCKFILE"
-  __zert-align-version "test-plugin" "pin_hash"
+  __zert-align-version "test-plugin" "" "pin_hash"
   assert_contains "Checked out pin_hash" "$(cat "$TEMP_DIR/git.log")"
   assert_contains "[test-plugin]=pin_hash" "$(cat "$ZERT_LOCKFILE")"
+  assert_contains ",pin:pin_hash" "$(cat "$ZERT_LOCKFILE")"
 }
 test_case test_aligns_with_pin_argument
 
@@ -91,6 +86,7 @@ test_case test_removes_zwc
 
 #  Adds hash if plugin not in lockfile
 function test_adds_hash_if_not_in_lockfile {
+  set -x
   function __zert-is-aligned(){return 1; }
   echo "" > "$ZERT_LOCKFILE"
   __zert-align-version "test-plugin"

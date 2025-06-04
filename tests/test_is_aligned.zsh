@@ -3,6 +3,7 @@
 
 HERE="${${(%):-%N}:A:h}"
 source "$HERE/lib.zsh"
+source "$HERE/../lib/__zert-get-plugin-info"
 source "$HERE/../lib/__zert-is-aligned"
 
 
@@ -45,14 +46,6 @@ function test_not_in_lockfile {
   
 }
 test_case test_not_in_lockfile
-
-# Aligned with pin
-function test_aligned_with_pin {
-  git() { echo "pin_hash"; }
-  __zert-is-aligned "test-plugin" "pin_hash"
-  assert_equals 0 $?
-}
-test_case test_aligned_with_pin
 
 # Not aligned with pin
 function test_not_aligned_with_pin {

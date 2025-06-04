@@ -24,7 +24,7 @@ done
 if [[ -n "${failed_files[@]}" ]]; then
     echo ""
     echo "${YELLOW}FAILED_TESTS:${RESET}"
-    echo "${failed_files[*]}"
+    print -l -- "${failed_files[@]}"
     return 1;
 else
     echo ""
