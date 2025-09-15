@@ -27,4 +27,4 @@ HERE="${${(%):-%N}:A:h}"
 
 # Add functions and lib directory to fpath and autoload functions
 fpath=("$HERE/functions" "$HERE/lib" $fpath)
-autoload -Uz zert __zert-log __zert-get-plugin-name __zert-fetch __zert-align-version __zert-compile __zert-is-aligned __zert-add __zert-update __zert-purge __zert-review-plugin __zert-get-plugin-info __zert-set-plugin-info
+autoload -Uz zert __zert-log __zert-get-plugin-name __zert-fetch __zert-align-version __zert-compile __zert-is-aligned __zert-add __zert-update __zert-purge __zert-review-plugin __zert-get-plugin-info __zert-set-plugin-info __zert-load-from-framework __zert-use

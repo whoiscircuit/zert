@@ -1,0 +1,73 @@
+__zert_use(){
+    if [[ $# -lt 2 ]]; then
+        __zert-log error "incorrect use of 'zert use'."
+        return 1
+    fi
+
+    local framework="$1"
+    shift;
+    local lib_path="$1"
+    shift;
+
+    # Parse options with zparseopts, storing each flag in its own variable
+    local branch pin
+    zparseopts -D -E -- {b,-branch}:=branch {p,-pin}:=pin -no-aliases=no_aliases
+    
+    # Extract option values
+    branch="${branch[2]}"
+    pin="${pin[2]}"
+    no_aliases="${no_aliases[1]}"
+
+    if [[ " $ZERT_PLUGINS_LIST " =~ " $framework " ]]; then
+        __zert-load-from-framework "$framework" "$lib_path" "$no_aliases"
+        return 0;
+    fi
+
+    case "$framework" in
+        ohmyzsh)
+            local source="https://github.com/ohmyzsh/ohmyzsh"
+        ;;
+        *)
+            __zert-log error "Framework '$framework' is not supported by zert"
+            exit 1
+        ;;
+    esac
+    # Fetch the framework if it doesn’t exist
+    local framework_dir="$ZERT_PLUGINS_DIR/$framework"
+    local needs_compile=false
+    if [[ ! -d "$framework_dir" ]]; then
+        local fetch_opts=()
+        [[ -n "$branch" ]] && fetch_opts+=(--branch "$branch")
+        fetch_opts+=(--name "$framework")
+        __zert-fetch "${fetch_opts[@]}" "$source"
+        if [[ $? -ne 0 ]]; then
+            __zert-log error FETCH_FAILED "Failed to fetch $source"
+            return 1
+        fi
+        needs_compile=true
+    fi
+    # Align version if not aligned
+    if ! __zert-is-aligned "$framework" "$branch" "$pin"; then
+        __zert-align-version "$framework" "$branch" "$pin" 
+        if [[ $? -ne 0 ]]; then
+            __zert-log error ALIGN_FAILED "Failed to align version for $framework"
+            return 1
+        fi
+        needs_compile=true
+    fi
+
+    # Compile if needed
+    if $needs_compile; then
+        __zert-compile "$framework"
+        if [[ $? -ne 0 ]]; then
+            __zert-log error COMPILE_FAILED "Failed to compile $framework"
+            return 1
+        fi
+    fi
+
+    fpath=("$framework_dir" $fpath)
+    ZERT_PLUGINS_LIST+=("$framework")
+
+    __zert-load-from-framework "$framework" "$lib_path" "$no_aliases"
+    return 0;
+}

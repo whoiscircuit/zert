@@ -1,5 +1,3 @@
-# functions/__zert-fetch
-# Fetch a plugin from a source
 __zert-fetch(){
     local usage="Usage: __zert-fetch [-b|--branch branch] [-n|--name name] <source>"
     # Parse options
@@ -69,7 +67,6 @@ __zert-fetch(){
             # Clone with optional branch
             local branch_opt=""
             [[ -n "${branch}" ]] && branch_opt="--branch=${branch}"
-            
             # Clone accordingly to clone style ZERT_CLONE_STYLE
             if [[ "$ZERT_CLONE_STYLE" == "normal" ]]; then
                 local clone_style=""

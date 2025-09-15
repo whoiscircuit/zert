@@ -1,0 +1,40 @@
+__zert-load-from-framework(){
+    local framework="$1"
+    local lib_path="$2"
+    local no_aliases="$3"
+    
+    case "$framework" in
+        ohmyzsh)
+            local framework_dir="$ZERT_PLUGINS_DIR/ohmyzsh";
+            if [[ "$lib_path" == "lib/"* ]]; then
+                local entry="$framework_dir/$lib_path.zsh"
+            elif [[ "$lib_path" == "plugins/"* ]]; then
+                local entry="$framework_dir/$lib_path/*.plugin.zsh"
+            else
+                __zert-log error "invalid path '$lib_path' for ohmyzsh. path must start with lib/ or plugins/"
+                exit 1
+            fi
+        ;;
+        *)
+            __zert-log error "Framework '$framework' is not supported by zert"
+            exit 1
+        ;;
+    esac
+
+    # Handle --no-aliases flag
+    if [[ -n "$no_aliases" ]]; then
+        function alias() { :; }
+    fi
+    source "$entry"
+    if [[ $? -ne 0 ]]; then
+        __zert-log error SOURCE_FAILED "Failed to source $entry"
+        return 1
+    fi
+
+    # Clean up mock alias function
+    if [[ -n "$no_aliases" ]]; then
+        unfunction alias
+    fi
+
+    return 0
+}
