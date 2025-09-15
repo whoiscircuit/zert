@@ -6,10 +6,11 @@ __zert-load-from-framework(){
     case "$framework" in
         ohmyzsh)
             local framework_dir="$ZERT_PLUGINS_DIR/ohmyzsh";
+            local basename="${lib_path##*/}"
             if [[ "$lib_path" == "lib/"* ]]; then
                 local entry="$framework_dir/$lib_path.zsh"
             elif [[ "$lib_path" == "plugins/"* ]]; then
-                local entry="$framework_dir/$lib_path/*.plugin.zsh"
+                local entry="$framework_dir/$lib_path/$basename.plugin.zsh"
             else
                 __zert-log error "invalid path '$lib_path' for ohmyzsh. path must start with lib/ or plugins/"
                 exit 1
